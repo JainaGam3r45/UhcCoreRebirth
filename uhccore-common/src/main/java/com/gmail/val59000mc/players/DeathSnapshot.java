@@ -15,8 +15,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class DeathSnapshot {
+
+	private static final Logger LOGGER = Logger.getLogger(DeathSnapshot.class.getCanonicalName());
 
 	private static final Map<UUID, DeathSnapshot> SNAPSHOTS = new ConcurrentHashMap<>();
 
@@ -205,6 +209,8 @@ public class DeathSnapshot {
 			Object item = m.invoke(inv);
 			return item instanceof ItemStack ? (ItemStack) item : null;
 		} catch (Throwable t) {
+			// Expected on 1.8, there's no off-hand slot to read.
+			LOGGER.log(Level.FINE, "Could not read the off-hand item", t);
 			return null;
 		}
 	}
@@ -213,7 +219,8 @@ public class DeathSnapshot {
 		try {
 			Method m = inv.getClass().getMethod("setItemInOffHand", ItemStack.class);
 			m.invoke(inv, item);
-		} catch (Throwable ignored) {
+		} catch (Throwable t) {
+			LOGGER.log(Level.FINE, "Could not restore the off-hand item", t);
 		}
 	}
 }

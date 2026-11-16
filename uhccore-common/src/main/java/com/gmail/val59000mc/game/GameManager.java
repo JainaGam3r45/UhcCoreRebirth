@@ -14,6 +14,7 @@ import com.gmail.val59000mc.host.HostMenuListener;
 import com.gmail.val59000mc.languages.Lang;
 import com.gmail.val59000mc.listeners.*;
 import com.gmail.val59000mc.maploader.MapLoader;
+import com.gmail.val59000mc.players.DeathSnapshot;
 import com.gmail.val59000mc.players.PlayerManager;
 import com.gmail.val59000mc.players.TeamManager;
 import com.gmail.val59000mc.players.UhcPlayer;
@@ -462,6 +463,7 @@ public class GameManager{
 			gameIsEnding = true;
 			broadcastInfoMessage(Lang.GAME_FINISHED);
 			TimebombListener.cleanAll();
+			DeathSnapshot.clear();
 			playerManager.playSoundToAll(UniversalSound.ENDERDRAGON_GROWL.getSound(), 1, 2);
 			playerManager.setAllPlayersEndGame();
 			Bukkit.getScheduler().scheduleSyncDelayedTask(UhcCore.getPlugin(), new StopRestartTask(),20);

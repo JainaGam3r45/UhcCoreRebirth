@@ -220,6 +220,7 @@ public class PlayerManager {
 					Optional<DeathSnapshot> deathSnapshot = DeathSnapshot.get(uhcPlayer.getUuid());
 					if (deathSnapshot.isPresent()) {
 						deathSnapshot.get().restore(player, uhcPlayer);
+						consumeDeathSnapshot(uhcPlayer);
 						uhcPlayer.setHasBeenTeleportedToLocation(true);
 					} else {
 						teleportRevivedPlayerToSafeLocation(player, uhcPlayer);
@@ -668,9 +669,10 @@ public class PlayerManager {
 			uhcPlayer.setOfflineZombieUuid(null);
 		}
 
-		TimebombListener.cancelForPlayer(uhcPlayer.getName());
-
-		if (!spawnWithItems){
+		if (spawnWithItems){
+			// The items come back with the player, so the timebomb chest would only dupe them.
+			TimebombListener.cancelForPlayer(uhcPlayer.getName());
+		}else{
 			uhcPlayer.getStoredItems().clear();
 			DeathSnapshot.remove(uhcPlayer.getUuid());
 		}
@@ -708,11 +710,15 @@ public class PlayerManager {
 				Optional<DeathSnapshot> snapshot = DeathSnapshot.get(uhcPlayer.getUuid());
 				if (snapshot.isPresent()) {
 					snapshot.get().restore(player, uhcPlayer);
+					consumeDeathSnapshot(uhcPlayer);
 				} else {
 					UhcItems.giveGameItemTo(player, GameItem.COMPASS_ITEM);
 					UhcItems.giveGameItemTo(player, GameItem.CUSTOM_CRAFT_BOOK);
 					KitsManager.giveKitTo(player);
 					teleportRevivedPlayerToSafeLocation(player, uhcPlayer);
+					// No snapshot means an offline (zombie) death, so its stored loot is all we have.
+					uhcPlayer.getStoredItems().forEach(item -> player.getWorld().dropItem(player.getLocation(), item.reanimate()));
+					uhcPlayer.getStoredItems().clear();
 				}
 			} else {
 				UhcItems.giveGameItemTo(player, GameItem.COMPASS_ITEM);
@@ -733,8 +739,16 @@ public class PlayerManager {
 
 			Bukkit.getPluginManager().callEvent(new PlayerStartsPlayingEvent(uhcPlayer));
 		} catch (UhcPlayerNotOnlineException ignored) {
+			// Offline revive: playerJoinsTheGame finishes the job (snapshot or stored items) on their next join.
 			uhcPlayer.setHasBeenTeleportedToLocation(false);
 		}
+	}
+
+	// A snapshot is good for exactly one revive. Leaving it around would hand a later revive
+	// this death's inventory instead of whatever they had when they died again.
+	private void consumeDeathSnapshot(UhcPlayer uhcPlayer) {
+		DeathSnapshot.remove(uhcPlayer.getUuid());
+		uhcPlayer.getStoredItems().clear();
 	}
 
 	public void teleportRevivedPlayerToSafeLocation(Player player, UhcPlayer uhcPlayer) {
@@ -822,6 +836,8 @@ public class PlayerManager {
 
 			Bukkit.getPluginManager().callEvent(new PlayerStartsPlayingEvent(uhcPlayer));
 		} catch (UhcPlayerNotOnlineException ignored) {
+			// /uhc latescatter refuses offline targets, so this only trips if they log out mid-command.
+			// They're PLAYING now and playerJoinsTheGame drops them in on their next join.
 		}
 	}
 

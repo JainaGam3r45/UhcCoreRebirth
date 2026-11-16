@@ -85,6 +85,11 @@ public class PlayerDeathHandler {
 	}
 
 	public void handleOfflinePlayerDeath(UhcPlayer uhcPlayer, @Nullable Location location, @Nullable Player killer) {
+		if (uhcPlayer.getState() == PlayerState.PLAYING) {
+			// Any snapshot left is from an older death; the zombie's stored items are the fresh loot now.
+			DeathSnapshot.remove(uhcPlayer.getUuid());
+		}
+
 		List<ItemStack> modifiedDrops = handlePlayerDeath(uhcPlayer, location, uhcPlayer.getStoredItems().stream().map(Snapshot::makeCopy).collect(Collectors.toList()), killer);
 
 		// Drop player items

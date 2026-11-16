@@ -4,6 +4,7 @@ import java.util.logging.Logger;
 
 import com.gmail.val59000mc.configuration.MainConfig;
 import com.gmail.val59000mc.game.GameManager;
+import com.gmail.val59000mc.players.DeathSnapshot;
 import com.gmail.val59000mc.scenarios.scenariolisteners.TimebombListener;
 import com.gmail.val59000mc.utils.PluginForwardingHandler;
 import com.gmail.val59000mc.utils.UpdateChecker;
@@ -73,6 +74,7 @@ public class UhcCore extends JavaPlugin{
 	@Override
 	public void onDisable() {
 		TimebombListener.cleanAll();
+		DeathSnapshot.clear();
 	}
 
 	public static UhcCore getPlugin(){
