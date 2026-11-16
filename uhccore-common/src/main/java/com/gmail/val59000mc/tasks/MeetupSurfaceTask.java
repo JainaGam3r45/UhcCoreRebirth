@@ -48,7 +48,8 @@ public class MeetupSurfaceTask implements Runnable {
 		MainConfig config = gameManager.getConfig();
 		// Same floor as the host menu: at 0 one branch log overhead already counts as a roof.
 		this.maxDepth = Math.max(1, config.get(MainConfig.DEATHMATCH_SURFACE_MAX_DEPTH));
-		this.checkIntervalTicks = 20 * Math.max(1, config.get(MainConfig.DEATHMATCH_SURFACE_CHECK_INTERVAL));
+		// Capped so a fat-fingered config value can't overflow into a zero modulus below.
+		this.checkIntervalTicks = 20 * Math.max(1, Math.min(3600, config.get(MainConfig.DEATHMATCH_SURFACE_CHECK_INTERVAL)));
 	}
 
 	public void start() {
