@@ -11,6 +11,8 @@ import com.gmail.val59000mc.utils.UpdateChecker;
 import com.gmail.val59000mc.versionadapters.ServerVersion;
 import com.gmail.val59000mc.versionadapters.VersionAdapterLoader;
 
+import io.papermc.lib.PaperLib;
+
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -61,8 +63,12 @@ public class UhcCore extends JavaPlugin{
 		final boolean modernJar = getClassLoader().getResource(MODERN_JAR_MARKER) != null;
 		if (modernJar && !ServerVersion.isVersion(21)) {
 			getLogger().severe("This is the Modern jar (1.21+) but the server runs " + server
-					+ ". Use UhcCoreRebirth-Legacy for 1.8.8-1.20.4.");
+					+ ". Use UhcCoreRebirth-Legacy for 1.8.8-1.20.6.");
 			return false;
+		}
+		// The Modern bridge calls Paper-only API, and a failed bridge load only shows up at FINE.
+		if (modernJar && !PaperLib.isPaper()) {
+			getLogger().warning("The Modern jar is built for Paper. On plain Spigot some features may not work, run Paper or a fork.");
 		}
 		if (!modernJar && ServerVersion.isVersion(21)) {
 			getLogger().warning("Running the Legacy jar on " + server
