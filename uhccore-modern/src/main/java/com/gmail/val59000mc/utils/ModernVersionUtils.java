@@ -27,9 +27,11 @@ import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.attribute.AttributeModifier;
+import org.bukkit.attribute.AttributeModifier.Operation;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Chest;
+import org.bukkit.block.data.type.Chest.Type;
 import org.bukkit.block.Skull;
 import org.bukkit.block.data.type.EndPortalFrame;
 import org.bukkit.block.data.type.Leaves;
@@ -51,6 +53,8 @@ import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.RenderType;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
+import org.bukkit.scoreboard.Team.Option;
+import org.bukkit.scoreboard.Team.OptionStatus;
 
 public class ModernVersionUtils extends VersionUtils {
 
@@ -156,7 +160,7 @@ public class ModernVersionUtils extends VersionUtils {
 
 	@Override
 	public void setTeamNameTagVisibility(Team team, boolean value) {
-		team.setOption(Team.Option.NAME_TAG_VISIBILITY, value ? Team.OptionStatus.ALWAYS : Team.OptionStatus.NEVER);
+		team.setOption(Option.NAME_TAG_VISIBILITY, value ? OptionStatus.ALWAYS : OptionStatus.NEVER);
 	}
 
 	@Override
@@ -208,7 +212,7 @@ public class ModernVersionUtils extends VersionUtils {
 	public void setChestSide(Chest chest, boolean left) {
 		if (chest.getBlockData() instanceof org.bukkit.block.data.type.Chest) {
 			org.bukkit.block.data.type.Chest data = (org.bukkit.block.data.type.Chest) chest.getBlockData();
-			data.setType(left ? org.bukkit.block.data.type.Chest.Type.LEFT : org.bukkit.block.data.type.Chest.Type.RIGHT);
+			data.setType(left ? Type.LEFT : Type.RIGHT);
 			chest.getBlock().setBlockData(data, true);
 		}
 	}
@@ -286,7 +290,7 @@ public class ModernVersionUtils extends VersionUtils {
 						uuid,
 						name,
 						amount,
-						AttributeModifier.Operation.valueOf(operation),
+						Operation.valueOf(operation),
 						slot
 				));
 			}

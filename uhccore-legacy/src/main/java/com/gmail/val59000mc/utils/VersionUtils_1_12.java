@@ -29,6 +29,8 @@ import org.bukkit.potion.PotionData;
 import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
+import org.bukkit.scoreboard.Team.Option;
+import org.bukkit.scoreboard.Team.OptionStatus;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.Field;
@@ -131,7 +133,7 @@ public class VersionUtils_1_12 extends VersionUtils{
 
 	@Override
 	public void setTeamNameTagVisibility(Team team, boolean value){
-		team.setOption(Team.Option.NAME_TAG_VISIBILITY, value?Team.OptionStatus.ALWAYS:Team.OptionStatus.NEVER);
+		team.setOption(Option.NAME_TAG_VISIBILITY, value?OptionStatus.ALWAYS:OptionStatus.NEVER);
 	}
 
 	@Override

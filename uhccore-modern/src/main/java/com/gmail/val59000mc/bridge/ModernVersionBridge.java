@@ -24,6 +24,8 @@ import org.bukkit.scoreboard.RenderType;
 import org.bukkit.scoreboard.Score;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
+import org.bukkit.scoreboard.Team.Option;
+import org.bukkit.scoreboard.Team.OptionStatus;
 
 public class ModernVersionBridge implements VersionBridge {
 
@@ -98,7 +100,7 @@ public class ModernVersionBridge implements VersionBridge {
 
 	@Override
 	public void setTeamNameTagVisibility(Team team, boolean visible) {
-		team.setOption(Team.Option.NAME_TAG_VISIBILITY, visible ? Team.OptionStatus.ALWAYS : Team.OptionStatus.NEVER);
+		team.setOption(Option.NAME_TAG_VISIBILITY, visible ? OptionStatus.ALWAYS : OptionStatus.NEVER);
 	}
 
 	@Override

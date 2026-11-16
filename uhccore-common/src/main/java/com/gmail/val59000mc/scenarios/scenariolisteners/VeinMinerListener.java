@@ -17,6 +17,7 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.Optional;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class VeinMinerListener extends ScenarioListener{
 
@@ -75,7 +76,7 @@ public class VeinMinerListener extends ScenarioListener{
 		if (oreType.get() == OreType.COPPER) {
 			int copperTotal = 0;
 			for (int j = 0; j < vein.getSize(); j++) {
-				copperTotal += java.util.concurrent.ThreadLocalRandom.current().nextInt(2, 6);
+				copperTotal += ThreadLocalRandom.current().nextInt(2, 6);
 			}
 			amount = copperTotal * getVeinMultiplier(blockType);
 		}

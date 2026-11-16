@@ -17,9 +17,11 @@ import org.apache.commons.lang.Validate;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
+import org.bukkit.attribute.AttributeModifier.Operation;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Chest;
+import org.bukkit.block.data.type.Chest.Type;
 import org.bukkit.block.Skull;
 import org.bukkit.block.data.type.EndPortalFrame;
 import org.bukkit.block.data.type.Leaves;
@@ -39,6 +41,8 @@ import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.RenderType;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
+import org.bukkit.scoreboard.Team.Option;
+import org.bukkit.scoreboard.Team.OptionStatus;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.Method;
@@ -115,7 +119,7 @@ public class VersionUtils_1_13 extends VersionUtils{
 
 	@Override
 	public void setTeamNameTagVisibility(Team team, boolean value){
-		team.setOption(Team.Option.NAME_TAG_VISIBILITY, value?Team.OptionStatus.ALWAYS:Team.OptionStatus.NEVER);
+		team.setOption(Option.NAME_TAG_VISIBILITY, value?OptionStatus.ALWAYS:OptionStatus.NEVER);
 	}
 
 	@Override
@@ -170,7 +174,7 @@ public class VersionUtils_1_13 extends VersionUtils{
 	public void setChestSide(Chest chest, boolean left){
 		org.bukkit.block.data.type.Chest chestData = (org.bukkit.block.data.type.Chest) chest.getBlockData();
 
-		org.bukkit.block.data.type.Chest.Type side = left ? org.bukkit.block.data.type.Chest.Type.LEFT : org.bukkit.block.data.type.Chest.Type.RIGHT;
+		Type side = left ? Type.LEFT : Type.RIGHT;
 
 		chestData.setType(side);
 		chest.getBlock().setBlockData(chestData, true);
@@ -294,7 +298,7 @@ public class VersionUtils_1_13 extends VersionUtils{
 					uuid,
 					name,
 					amount,
-					AttributeModifier.Operation.valueOf(operation),
+					Operation.valueOf(operation),
 					slot
 				));
 			}

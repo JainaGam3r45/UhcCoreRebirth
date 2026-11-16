@@ -13,6 +13,7 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.Optional;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class TripleOresListener extends ScenarioListener {
 
@@ -40,7 +41,7 @@ public class TripleOresListener extends ScenarioListener {
 			int count = 3;
 
 			if (oreType.get() == OreType.COPPER) {
-				count = java.util.concurrent.ThreadLocalRandom.current().nextInt(2, 6) * 3;
+				count = ThreadLocalRandom.current().nextInt(2, 6) * 3;
 			}
 
 			if (OreType.isGold(type) && isEnabled(Scenario.DOUBLE_GOLD)) {
