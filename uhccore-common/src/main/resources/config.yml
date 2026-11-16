@@ -536,6 +536,8 @@ deathmatch:
       # walls are counted from the player's feet, so it's basically how deep they're allowed to dig.
       # Leaves, glass and water don't count, so nobody gets yanked out from under a tree or out of a lake.
       # Minimum 1, at 0 a single branch log overhead would already count as a roof.
+      # Shafts are spotted by probing 2 blocks out, so only 1x1 and 2x2 holes (and the middle of a 3x3)
+      # count. Pits 4+ blocks wide are just open ground as far as this check cares.
       max-depth: 10
       # How often, in seconds, players are checked
       check-interval: 5

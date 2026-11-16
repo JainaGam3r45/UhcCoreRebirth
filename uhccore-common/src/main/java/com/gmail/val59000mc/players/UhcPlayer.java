@@ -473,14 +473,14 @@ public class UhcPlayer {
 		}
 	}
 
-	public static void teleport(Player player, Location location) {
+	public static boolean teleport(Player player, Location location) {
 		// On Minecraft < 1.9, the player may fall through the ground if teleported to a location
 		// where the chunk is not loaded, due to vanilla movement code bugs.
 		// See also: https://gitlab.com/uhccore/uhccore/-/issues/81
 		if (!VersionUtils.isAtLeast(9)) { // 1.9+
 			LocationUtils.fullyPopulateChunk(location.getChunk());
 		}
-		player.teleport(location);
+		return player.teleport(location);
 	}
 
 }

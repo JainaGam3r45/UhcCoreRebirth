@@ -170,7 +170,10 @@ public class MeetupSurfaceTask implements Runnable {
 
 		WorldBorder border = world.getWorldBorder();
 		Location center = border.getCenter();
-		double limit = Math.max(0, border.getSize() / 2 - BORDER_MARGIN);
+		double halfSize = border.getSize() / 2;
+		// With a border thinner than the margin the limit hits 0 and no block center fits,
+		// so tiny borders just keep the player within the middle half instead.
+		double limit = halfSize - Math.min(BORDER_MARGIN, halfSize / 2);
 		int x = (int) Math.floor(clamp(location.getX(), center.getX() - limit, center.getX() + limit));
 		int z = (int) Math.floor(clamp(location.getZ(), center.getZ() - limit, center.getZ() + limit));
 
@@ -181,8 +184,10 @@ public class MeetupSurfaceTask implements Runnable {
 			return;
 		}
 		player.setFallDistance(0);
-		UhcPlayer.teleport(player, LocationUtils.withSameDirection(target, player));
-		uhcPlayer.sendMessage(Lang.GAME_MEETUP_PULLED_TO_SURFACE);
+		// Another plugin can cancel the teleport; no point bragging about a pull that never happened.
+		if (UhcPlayer.teleport(player, LocationUtils.withSameDirection(target, player))) {
+			uhcPlayer.sendMessage(Lang.GAME_MEETUP_PULLED_TO_SURFACE);
+		}
 	}
 
 	private static double clamp(double value, double min, double max) {
