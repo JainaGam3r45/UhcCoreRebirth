@@ -208,7 +208,8 @@ public class ScoreboardHandler {
 				Object nmsObjective = getHandleObjective.invoke(craftObjective);
 
 				Method getOrCreateScore = null;
-				// Check for 3-parameter (ScoreHolder/String, Objective, boolean) or 2-parameter (ScoreHolder/String, Objective) methods
+				// Mojang keeps reshuffling this one: newer builds take (ScoreHolder, Objective, boolean),
+				// older ones (String, Objective). Obfuscated names differ too, so match on the shape.
 				for (Method m : nmsScoreboard.getClass().getMethods()) {
 					Class<?>[] params = m.getParameterTypes();
 					if (params.length == 3 && params[2] == boolean.class && params[1].isAssignableFrom(nmsObjective.getClass())) {
