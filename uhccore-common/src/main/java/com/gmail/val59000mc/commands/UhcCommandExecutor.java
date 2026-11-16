@@ -55,7 +55,7 @@ public class UhcCommandExecutor implements CommandExecutor{
 			return true;
 		}
 
-		if (args.length >= 2 && args[0].equalsIgnoreCase("revive")){
+		if (args.length >= 1 && args[0].equalsIgnoreCase("revive")){
 			if (!sender.hasPermission("uhc-core.commands.revive")){
 				sender.sendMessage(ChatColor.RED + "You don't have permission to revive players.");
 				return true;
@@ -206,6 +206,11 @@ public class UhcCommandExecutor implements CommandExecutor{
 	private boolean handleReviveSubCommand(CommandSender sender, String[] args) {
 		if (gameManager.getGameState() != GameState.PLAYING && gameManager.getGameState() != GameState.DEATHMATCH) {
 			sender.sendMessage(ChatColor.RED + "You can only use this command while playing!");
+			return true;
+		}
+
+		if (args.length < 2) {
+			sender.sendMessage(ChatColor.RED + "Usage: /uhc revive <player> [clear]");
 			return true;
 		}
 
