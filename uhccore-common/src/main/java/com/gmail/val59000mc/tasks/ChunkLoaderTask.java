@@ -1,7 +1,6 @@
 package com.gmail.val59000mc.tasks;
 
 import com.gmail.val59000mc.UhcCore;
-import com.gmail.val59000mc.utils.VersionUtils;
 import io.papermc.lib.PaperLib;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
@@ -34,6 +33,15 @@ public abstract class ChunkLoaderTask implements Runnable {
 
 		x = -maxChunk;
 		z = -maxChunk;
+	}
+
+	/**
+	 * Deliberately asks PaperLib instead of VersionUtils: getChunkAtAsync only goes async when
+	 * PaperLib picked its Paper handler. PaperLib 1.0.8 can't parse 26.x, falls back to plain
+	 * world.getChunkAt there, and Paper kills sync chunk loads coming from another thread.
+	 */
+	public static boolean canRunOffMainThread() {
+		return PaperLib.isPaper() && PaperLib.isVersion(13);
 	}
 
 	public abstract void onDoneLoadingWorld();
@@ -79,7 +87,7 @@ public abstract class ChunkLoaderTask implements Runnable {
 		if(x <= maxChunk){
 			LOGGER.info("Loading map "+getLoadingState()+"% - "+chunksLoaded+"/"+totalChunksToLoad+" chunks loaded");
 
-			if (PaperLib.isPaper() && VersionUtils.isAtLeast(13)){
+			if (canRunOffMainThread()){
 				Bukkit.getScheduler().scheduleAsyncDelayedTask(UhcCore.getPlugin(), this, restDuration);
 			}else {
 				Bukkit.getScheduler().scheduleSyncDelayedTask(UhcCore.getPlugin(), this, restDuration);

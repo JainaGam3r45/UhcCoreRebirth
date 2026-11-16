@@ -42,7 +42,6 @@ import com.gmail.val59000mc.versionadapters.adapters.SetBiomeProviderAdapter;
 import com.pieterdebot.biomemapping.Biome;
 import com.pieterdebot.biomemapping.BiomeMappingAPI;
 
-import io.papermc.lib.PaperLib;
 
 public class MapLoader {
 
@@ -510,7 +509,7 @@ public class MapLoader {
 
 		chunkLoaderTask.printSettings();
 
-		if (PaperLib.isPaper() && VersionUtils.isAtLeast(13)){
+		if (ChunkLoaderTask.canRunOffMainThread()){
 			Bukkit.getScheduler().runTaskAsynchronously(UhcCore.getPlugin(), chunkLoaderTask);
 		}else {
 			Bukkit.getScheduler().runTask(UhcCore.getPlugin(), chunkLoaderTask);
