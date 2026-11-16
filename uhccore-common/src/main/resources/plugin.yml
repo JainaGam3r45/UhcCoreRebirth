@@ -1,14 +1,14 @@
 name: UhcCore
 description: Automates games of the classic UHC gamemode, with endless customization options!
 version: "${pluginVersion}"
-authors: [val59000mc, Mezy, zerodind]
+authors: [val59000mc, Mezy, zerodind, JainaGam3r45]
 main: com.gmail.val59000mc.UhcCore
 softdepend: [WorldEdit, Vault, ProtocolLib, PlaceholderAPI, Chunky]
 api-version: 1.13
 commands:
   uhccore:
     description: "Type '/uhccore help' to see a list of commands"
-    usage: "/uhccore <sub-command> (Debug command only!)"
+    usage: "/uhccore <sub-command>"
   chat:
     description: "Type '/chat' to toggle global chat"
     usage: "/chat"
@@ -78,6 +78,9 @@ commands:
     aliases: [teamcoords]
     permission: "uhc-core.commands.teamcoords"
 permissions:
+  uhc-core.commands.revive:
+    description: "Allows reviving a dead player with /revive or /uhc revive."
+    default: op
   uhc-core.commands.teamcoords:
     description: "Allows sharing your coordinates with your team during the game."
     default: true
