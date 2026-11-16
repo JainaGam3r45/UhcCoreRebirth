@@ -105,19 +105,8 @@ public class ModernVersionBridge implements VersionBridge {
 
 	@Override
 	public void setPlayerMaxHealth(Player player, double maxHealth) {
-		AttributeInstance attr = null;
-		try {
-			Attribute legacyAttr = Attribute.valueOf("GENERIC_MAX_HEALTH");
-			attr = player.getAttribute(legacyAttr);
-		} catch (IllegalArgumentException ignored) {
-		}
-		if (attr == null) {
-			try {
-				Attribute modernAttr = Attribute.valueOf("MAX_HEALTH");
-				attr = player.getAttribute(modernAttr);
-			} catch (IllegalArgumentException ignored) {
-			}
-		}
+		Attribute maxHealthAttribute = ModernVersionUtils.findMaxHealthAttribute();
+		AttributeInstance attr = maxHealthAttribute == null ? null : player.getAttribute(maxHealthAttribute);
 		if (attr != null) {
 			attr.setBaseValue(maxHealth);
 		}

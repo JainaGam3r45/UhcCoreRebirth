@@ -11,6 +11,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -23,6 +24,7 @@ import org.bukkit.GameRule;
 import org.bukkit.Keyed;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
 import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
@@ -40,6 +42,7 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerPortalEvent;
 import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.EquipmentSlotGroup;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.Recipe;
 import org.bukkit.inventory.ShapedRecipe;
@@ -49,6 +52,7 @@ import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.inventory.meta.SuspiciousStewMeta;
 import org.bukkit.potion.PotionData;
 import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionType;
 import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.RenderType;
 import org.bukkit.scoreboard.Scoreboard;
@@ -59,6 +63,54 @@ import org.bukkit.scoreboard.Team.OptionStatus;
 public class ModernVersionUtils extends VersionUtils {
 
 	private static final Logger LOGGER = Logger.getLogger(ModernVersionUtils.class.getCanonicalName());
+
+	private static final String STRONG_POTION_PREFIX = "STRONG_";
+	private static final String LONG_POTION_PREFIX = "LONG_";
+
+	/**
+	 * Registry lookup that survives the 1.21.2 attribute rename, where Mojang dropped the
+	 * "generic." / "player." style prefixes. Tries the key as-is, then without the prefix,
+	 * which is the same rename Attribute.valueOf used to apply behind our back.
+	 */
+	@Nullable
+	public static Attribute findAttribute(NamespacedKey key) {
+		Attribute attribute = Registry.ATTRIBUTE.get(key);
+		int prefixEnd = key.getKey().lastIndexOf('.');
+		if (attribute == null && prefixEnd >= 0) {
+			attribute = Registry.ATTRIBUTE.get(new NamespacedKey(key.getNamespace(), key.getKey().substring(prefixEnd + 1)));
+		}
+		return attribute;
+	}
+
+	/**
+	 * Max health lives at "max_health" on 1.21.2+ and at "generic.max_health" on 1.21.0/1.21.1.
+	 */
+	@Nullable
+	public static Attribute findMaxHealthAttribute() {
+		Attribute attribute = findAttribute(NamespacedKey.minecraft("max_health"));
+		if (attribute == null) {
+			attribute = findAttribute(NamespacedKey.minecraft("generic.max_health"));
+		}
+		return attribute;
+	}
+
+	// Mirrors what OldEnum#name() hands out, so kit files written before this change still parse.
+	private static String getAttributeName(Attribute attribute) {
+		NamespacedKey key = attribute.getKey();
+		if (NamespacedKey.MINECRAFT.equals(key.getNamespace())) {
+			return key.getKey().toUpperCase(Locale.ROOT);
+		}
+		return key.toString();
+	}
+
+	private static Attribute parseAttributeName(String name) {
+		NamespacedKey key = NamespacedKey.fromString(name.toLowerCase(Locale.ROOT));
+		Attribute attribute = key == null ? null : findAttribute(key);
+		if (attribute == null) {
+			throw new IllegalArgumentException("No attribute found with the name " + name);
+		}
+		return attribute;
+	}
 
 	@Override
 	public ShapedRecipe createShapedRecipe(ItemStack craft, String craftKey) {
@@ -100,19 +152,8 @@ public class ModernVersionUtils extends VersionUtils {
 
 	@Override
 	public void setPlayerMaxHealth(Player player, double maxHealth) {
-		AttributeInstance attr = null;
-		try {
-			Attribute legacyAttr = Attribute.valueOf("GENERIC_MAX_HEALTH");
-			attr = player.getAttribute(legacyAttr);
-		} catch (IllegalArgumentException ignored) {
-		}
-		if (attr == null) {
-			try {
-				Attribute modernAttr = Attribute.valueOf("MAX_HEALTH");
-				attr = player.getAttribute(modernAttr);
-			} catch (IllegalArgumentException ignored) {
-			}
-		}
+		Attribute maxHealthAttribute = findMaxHealthAttribute();
+		AttributeInstance attr = maxHealthAttribute == null ? null : player.getAttribute(maxHealthAttribute);
 		if (attr != null) {
 			attr.setBaseValue(maxHealth);
 		}
@@ -172,24 +213,44 @@ public class ModernVersionUtils extends VersionUtils {
 	@Nullable
 	@Override
 	public JsonObject getBasePotionEffect(PotionMeta potionMeta) {
-		PotionData potionData = potionMeta.getBasePotionData();
-		if (potionData == null) {
+		PotionType potionType = potionMeta.getBasePotionType();
+		if (potionType == null) {
 			return null;
 		}
+		// Since 1.20.5 long/strong potions are their own PotionType. Kit JSON still stores
+		// the base type plus flags, because common rebuilds it through PotionData, which
+		// rejects LONG_/STRONG_ types outright.
+		String typeName = potionType.name();
+		boolean upgraded = typeName.startsWith(STRONG_POTION_PREFIX);
+		boolean extended = typeName.startsWith(LONG_POTION_PREFIX);
+		if (upgraded) {
+			typeName = typeName.substring(STRONG_POTION_PREFIX.length());
+		} else if (extended) {
+			typeName = typeName.substring(LONG_POTION_PREFIX.length());
+		}
 		JsonObject baseEffect = new JsonObject();
-		baseEffect.addProperty("type", potionData.getType().name());
-		if (potionData.isUpgraded()) {
+		baseEffect.addProperty("type", typeName);
+		if (upgraded) {
 			baseEffect.addProperty("upgraded", true);
 		}
-		if (potionData.isExtended()) {
+		if (extended) {
 			baseEffect.addProperty("extended", true);
 		}
 		return baseEffect;
 	}
 
+	// PotionData is pinned here by the abstract signature in common, which still has to
+	// compile for 1.8.8. We only read it and hand the real PotionType to the meta.
 	@Override
+	@SuppressWarnings("removal")
 	public PotionMeta setBasePotionEffect(PotionMeta potionMeta, PotionData potionData) {
-		potionMeta.setBasePotionData(potionData);
+		PotionType potionType = potionData.getType();
+		if (potionData.isUpgraded()) {
+			potionType = PotionType.valueOf(STRONG_POTION_PREFIX + potionType.name());
+		} else if (potionData.isExtended()) {
+			potionType = PotionType.valueOf(LONG_POTION_PREFIX + potionType.name());
+		}
+		potionMeta.setBasePotionType(potionType);
 		return potionMeta;
 	}
 
@@ -262,7 +323,7 @@ public class ModernVersionUtils extends VersionUtils {
 				}
 				modifiersJson.add(modifierObject);
 			}
-			attributesJson.add(attribute.name(), modifiersJson);
+			attributesJson.add(getAttributeName(attribute), modifiersJson);
 		}
 		return attributesJson;
 	}
@@ -275,10 +336,9 @@ public class ModernVersionUtils extends VersionUtils {
 		}
 		Set<Map.Entry<String, JsonElement>> entries = attributes.entrySet();
 		for (Map.Entry<String, JsonElement> attributeEntry : entries) {
-			Attribute attribute = Attribute.valueOf(attributeEntry.getKey());
+			Attribute attribute = parseAttributeName(attributeEntry.getKey());
 			for (JsonElement jsonElement : attributeEntry.getValue().getAsJsonArray()) {
 				JsonObject modifier = jsonElement.getAsJsonObject();
-				String name = modifier.get("name").getAsString();
 				double amount = modifier.get("amount").getAsDouble();
 				String operation = modifier.get("operation").getAsString();
 				EquipmentSlot slot = null;
@@ -286,12 +346,13 @@ public class ModernVersionUtils extends VersionUtils {
 					slot = EquipmentSlot.valueOf(modifier.get("slot").getAsString());
 				}
 				UUID uuid = modifier.has("uuid") ? UUID.fromString(modifier.get("uuid").getAsString()) : UUID.randomUUID();
+				// 1.21 keys modifiers by NamespacedKey and the old UUID constructor already threw
+				// the "name" field away, so we just do the same conversion it did internally.
 				meta.addAttributeModifier(attribute, new AttributeModifier(
-						uuid,
-						name,
+						NamespacedKey.fromString(uuid.toString()),
 						amount,
 						Operation.valueOf(operation),
-						slot
+						slot == null ? EquipmentSlotGroup.ANY : slot.getGroup()
 				));
 			}
 		}
