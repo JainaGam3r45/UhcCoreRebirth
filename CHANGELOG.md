@@ -38,18 +38,12 @@ places fire or TNT, or empties a lava bucket near other players
 ### Bug fixes
 
 - The plugin wouldn't enable on 26.x, because PaperLib's version parser read
-26.x as version 0
-- The Modern jar now ships all the version adapters it needs
-- Gamerules are applied again on 1.12 (a `NoClassDefFoundError` was skipping them)
-- Kit attribute names such as `GENERIC_ATTACK_DAMAGE` load again on 1.21.3+
-- `/uhc timer` no longer starts a deathmatch that is disabled in the config
-- Revive no longer restores a stale inventory
-- The NoClean timer no longer leaks between scenario toggles, and no longer
-spams chat on 1.8
-- Oversized teams count as full when the team size is lowered
+26.x as version 0 (detection fixed; not yet started on a 26.x server)
 
 ### Other
 
+- Dropped the `Attribute.valueOf` and `PotionData` calls Paper marked for
+removal; old-style kit attribute names keep loading on 1.21.3+
 - Removed the GitLab CI pipeline
 
 ## [1.21.0] - 2026-11-16
