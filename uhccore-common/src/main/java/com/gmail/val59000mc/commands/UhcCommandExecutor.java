@@ -288,6 +288,13 @@ public class UhcCommandExecutor implements CommandExecutor{
 			return true;
 		}
 
+		// Mid-game joiners show up as DEAD spectators, and those are exactly who latescatter is for.
+		// Anyone who was actually in the game and died needs the revive cleanup (zombie, timebomb, snapshot).
+		if (targetUhcPlayer.getState() == PlayerState.DEAD && targetUhcPlayer.getHasBeenTeleportedToLocation()) {
+			sender.sendMessage(ChatColor.RED + "Player " + targetUhcPlayer.getName() + " is dead, use /uhc revive instead.");
+			return true;
+		}
+
 		if (args.length >= 3) {
 			String teamQuery = args[2];
 			UhcTeam targetTeam = tm.getTeamByName(teamQuery);
@@ -312,10 +319,9 @@ public class UhcCommandExecutor implements CommandExecutor{
 				return true;
 			}
 		} else {
-			if (targetUhcPlayer.getTeam() == null) {
-				if (gameManager.getConfig().get(MainConfig.AUTO_ASSIGN_PLAYER_TO_TEAM)) {
-					pm.autoAssignPlayerToTeam(targetUhcPlayer);
-				}
+			// Every UhcPlayer starts in their own solo team, so getTeam() is never null here.
+			if (targetUhcPlayer.isSolo() && gameManager.getConfig().get(MainConfig.AUTO_ASSIGN_PLAYER_TO_TEAM)) {
+				pm.autoAssignPlayerToTeam(targetUhcPlayer);
 			}
 		}
 
