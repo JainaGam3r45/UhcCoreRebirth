@@ -2,12 +2,10 @@ package com.gmail.val59000mc.utils;
 
 import com.gmail.val59000mc.exceptions.ParseException;
 import com.gmail.val59000mc.players.UhcPlayer;
+import com.gmail.val59000mc.versionadapters.ServerVersion;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
-import io.papermc.lib.PaperLib;
-
-import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -32,8 +30,6 @@ import org.bukkit.scoreboard.Team;
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public abstract class VersionUtils{
 
@@ -42,43 +38,26 @@ public abstract class VersionUtils{
 
 	public static MinecraftVersion getServerVersion(){
 		if (serverVersion == null){
-			String bukkitVersion = Bukkit.getBukkitVersion();
-			String version = Bukkit.getVersion();
-			serverVersion = parseVersion(bukkitVersion, version);
+			serverVersion = toMinecraftVersion(ServerVersion.current());
 		}
 		return serverVersion;
 	}
 
+	// ServerVersion does the actual parsing so the adapters and the core can't disagree on what server this is
 	public static MinecraftVersion parseVersion(String bukkitVersion, String version){
-		Pattern pattern = Pattern.compile("(?i)(?:\\(MC:\\s*|v)?(\\d+)\\.(\\d+)(?:\\.(\\d+))?");
-		if (bukkitVersion != null && !bukkitVersion.isEmpty()){
-			Matcher matcher = pattern.matcher(bukkitVersion);
-			if (matcher.find()){
-				int major = Integer.parseInt(matcher.group(1));
-				int minor = Integer.parseInt(matcher.group(2));
-				int patch = matcher.group(3) != null ? Integer.parseInt(matcher.group(3)) : 0;
-				return new MinecraftVersion(major, minor, patch);
-			}
-		}
-		if (version != null && !version.isEmpty()){
-			Matcher matcher = pattern.matcher(version);
-			if (matcher.find()){
-				int major = Integer.parseInt(matcher.group(1));
-				int minor = Integer.parseInt(matcher.group(2));
-				int patch = matcher.group(3) != null ? Integer.parseInt(matcher.group(3)) : 0;
-				return new MinecraftVersion(major, minor, patch);
-			}
-		}
-		int fallbackMinor = PaperLib.getMinecraftVersion();
-		return new MinecraftVersion(1, fallbackMinor, 0);
+		return toMinecraftVersion(ServerVersion.parse(bukkitVersion, version));
+	}
+
+	private static MinecraftVersion toMinecraftVersion(ServerVersion version){
+		return new MinecraftVersion(version.getMajor(), version.getMinor(), version.getPatch());
 	}
 
 	public static boolean isAtLeast(int legacyMinor){
-		return getServerVersion().isAtLeastLegacy(legacyMinor);
+		return ServerVersion.isVersion(legacyMinor);
 	}
 
 	public static boolean isAtLeast(int legacyMinor, int legacyPatch){
-		return getServerVersion().isAtLeastLegacy(legacyMinor, legacyPatch);
+		return ServerVersion.isVersion(legacyMinor, legacyPatch);
 	}
 
 	public static boolean isAtLeast(int major, int minor, int patch){

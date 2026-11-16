@@ -2,8 +2,7 @@ package com.gmail.val59000mc.schematics;
 
 import com.gmail.val59000mc.UhcCore;
 import com.gmail.val59000mc.configuration.Dependencies;
-
-import io.papermc.lib.PaperLib;
+import com.gmail.val59000mc.utils.VersionUtils;
 
 import org.apache.commons.lang.Validate;
 import org.bukkit.Chunk;
@@ -92,7 +91,7 @@ public class Schematic {
 
 		ArrayList<Integer> dimensions;
 		try {
-			if (PaperLib.getMinecraftVersion() < 13){
+			if (!VersionUtils.isAtLeast(13)){
 				dimensions = SchematicHandler8.pasteSchematic(location, schematicFile.getPath());
 			}else {
 				dimensions = SchematicHandler13.pasteSchematic(location, schematicFile.getPath());

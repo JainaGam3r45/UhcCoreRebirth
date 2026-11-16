@@ -7,7 +7,6 @@ import com.gmail.val59000mc.players.UhcPlayer;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import io.papermc.lib.PaperLib;
 import org.apache.commons.lang.Validate;
 import org.bukkit.*;
 import org.bukkit.block.Block;
@@ -223,7 +222,7 @@ public class VersionUtils_1_8 extends VersionUtils{
 	@Nullable
 	@Override
 	public JsonObject getItemAttributes(ItemStack itemStack){
-		if (PaperLib.isVersion(9)) {
+		if (VersionUtils.isAtLeast(9)) {
 			return null;
 		}
 
@@ -315,7 +314,7 @@ public class VersionUtils_1_8 extends VersionUtils{
 
 	@Override
 	public JsonItemStack applyItemAttributes(JsonItemStack itemStack, JsonObject attributes){
-		if (PaperLib.isVersion(9)) {
+		if (VersionUtils.isAtLeast(9)) {
 			return itemStack;
 		}
 

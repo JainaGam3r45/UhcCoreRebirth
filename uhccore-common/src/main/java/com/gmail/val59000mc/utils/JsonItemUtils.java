@@ -3,8 +3,6 @@ package com.gmail.val59000mc.utils;
 import com.gmail.val59000mc.exceptions.ParseException;
 import com.google.gson.*;
 
-import io.papermc.lib.PaperLib;
-
 import org.apache.commons.lang.Validate;
 import org.bukkit.ChatColor;
 import org.bukkit.Color;
@@ -81,7 +79,7 @@ public class JsonItemUtils{
 				json.add("flags", jsonFlags);
 			}
 
-			if (PaperLib.isVersion(14) && meta.hasCustomModelData()) {
+			if (VersionUtils.isAtLeast(14) && meta.hasCustomModelData()) {
 				json.addProperty("custom-model-data", meta.getCustomModelData());
 			}
 
@@ -237,7 +235,7 @@ public class JsonItemUtils{
 						meta = parseFlags(meta, entry.getValue().getAsJsonArray());
 						break;
 					case "custom-model-data":
-						if (PaperLib.isVersion(14)) {
+						if (VersionUtils.isAtLeast(14)) {
 							meta.setCustomModelData(entry.getValue().getAsInt());
 						}
 						break;

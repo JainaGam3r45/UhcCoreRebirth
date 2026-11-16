@@ -1,6 +1,7 @@
 package com.gmail.val59000mc.tasks;
 
 import com.gmail.val59000mc.UhcCore;
+import com.gmail.val59000mc.utils.VersionUtils;
 import io.papermc.lib.PaperLib;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
@@ -78,7 +79,7 @@ public abstract class ChunkLoaderTask implements Runnable {
 		if(x <= maxChunk){
 			LOGGER.info("Loading map "+getLoadingState()+"% - "+chunksLoaded+"/"+totalChunksToLoad+" chunks loaded");
 
-			if (PaperLib.isPaper() && PaperLib.getMinecraftVersion() >= 13){
+			if (PaperLib.isPaper() && VersionUtils.isAtLeast(13)){
 				Bukkit.getScheduler().scheduleAsyncDelayedTask(UhcCore.getPlugin(), this, restDuration);
 			}else {
 				Bukkit.getScheduler().scheduleSyncDelayedTask(UhcCore.getPlugin(), this, restDuration);

@@ -11,6 +11,7 @@ import com.gmail.val59000mc.utils.LocationUtils;
 import com.gmail.val59000mc.utils.SpigotUtils;
 import com.gmail.val59000mc.utils.TimeUtils;
 import com.gmail.val59000mc.utils.UniversalMaterial;
+import com.gmail.val59000mc.utils.VersionUtils;
 import com.gmail.val59000mc.utils.snapshot.Snapshot;
 
 import io.papermc.lib.PaperLib;
@@ -465,7 +466,7 @@ public class UhcPlayer {
 
 	private static boolean shouldBreak(ItemStack item) {
 		// Behavior is different on older Minecraft versions, see https://bugs.mojang.com/browse/MC-120664
-		if (PaperLib.isVersion(13, 1)) { // 1.13.1+
+		if (VersionUtils.isAtLeast(13, 1)) { // 1.13.1+
 			return item.getDurability() >= item.getType().getMaxDurability();
 		} else { // 1.8.8 - 1.13
 			return item.getDurability() > item.getType().getMaxDurability();
@@ -476,7 +477,7 @@ public class UhcPlayer {
 		// On Minecraft < 1.9, the player may fall through the ground if teleported to a location
 		// where the chunk is not loaded, due to vanilla movement code bugs.
 		// See also: https://gitlab.com/uhccore/uhccore/-/issues/81
-		if (!PaperLib.isVersion(9)) { // 1.9+
+		if (!VersionUtils.isAtLeast(9)) { // 1.9+
 			LocationUtils.fullyPopulateChunk(location.getChunk());
 		}
 		player.teleport(location);

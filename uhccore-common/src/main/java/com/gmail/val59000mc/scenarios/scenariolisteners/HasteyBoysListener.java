@@ -6,7 +6,7 @@ import com.gmail.val59000mc.languages.Lang;
 import com.gmail.val59000mc.scenarios.Option;
 import com.gmail.val59000mc.scenarios.ScenarioListener;
 import com.gmail.val59000mc.utils.UniversalMaterial;
-import io.papermc.lib.PaperLib;
+import com.gmail.val59000mc.utils.VersionUtils;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.enchantments.Enchantment;
@@ -65,7 +65,7 @@ public class HasteyBoysListener extends ScenarioListener{
 			craftResult.addEnchantment(Enchantment.DURABILITY, durability);
 
 			// Check if config option is on AND if the MC version is at least 1.14 (Grindstone were only introduced in 1.14)
-			if (!allow_disenchanting && PaperLib.getMinecraftVersion() >= 14) {
+			if (!allow_disenchanting && VersionUtils.isAtLeast(14)) {
 				ItemMeta meta = craftResult.getItemMeta();
 				meta.getPersistentDataContainer().set(new NamespacedKey(UhcCore.getPlugin(), "isHasteyBoysTool"), PersistentDataType.STRING, "true");
 				craftResult.setItemMeta(meta);
@@ -77,7 +77,7 @@ public class HasteyBoysListener extends ScenarioListener{
 	@EventHandler
 	public void onInvClick(InventoryClickEvent e) {
 		if (e.isCancelled()) return;
-		if (allow_disenchanting || PaperLib.getMinecraftVersion() < 14) return; // If the config is not toggled or if the MC version is under 1.14 then exit
+		if (allow_disenchanting || !VersionUtils.isAtLeast(14)) return; // If the config is not toggled or if the MC version is under 1.14 then exit
 		if (e.getClickedInventory() == null || e.getView().getTopInventory().getType() != InventoryType.GRINDSTONE) return;
 
 		ItemStack item = null;
@@ -94,7 +94,7 @@ public class HasteyBoysListener extends ScenarioListener{
 	@EventHandler
 	public void onInvDrag(InventoryDragEvent e) {
 		if (e.isCancelled()) return;
-		if (allow_disenchanting || PaperLib.getMinecraftVersion() < 14) return; // If the config is not toggled or if the MC version is under 1.14 then exit
+		if (allow_disenchanting || !VersionUtils.isAtLeast(14)) return; // If the config is not toggled or if the MC version is under 1.14 then exit
 		if (e.getInventory().getType() != InventoryType.GRINDSTONE
 				|| !(e.getRawSlots().contains(0) || e.getRawSlots().contains(1))) return; // Ensure the slot that is being clicked is within the grindstone input slots
 

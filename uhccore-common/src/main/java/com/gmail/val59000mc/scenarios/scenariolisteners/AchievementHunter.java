@@ -22,8 +22,6 @@ import com.gmail.val59000mc.scenarios.Option;
 import com.gmail.val59000mc.scenarios.ScenarioListener;
 import com.gmail.val59000mc.utils.VersionUtils;
 
-import io.papermc.lib.PaperLib;
-
 public class AchievementHunter extends ScenarioListener implements EventExecutor {
 
 	@Option(key = "health-at-start")
@@ -34,7 +32,7 @@ public class AchievementHunter extends ScenarioListener implements EventExecutor
 	@Override
 	public void onEnable() {
 		final Class<? extends Event> eventType;
-		if (PaperLib.getMinecraftVersion() < 12) {
+		if (!VersionUtils.isAtLeast(12)) {
 			eventType = PlayerAchievementAwardedEvent.class;
 		} else {
 			eventType = PlayerAdvancementDoneEvent.class;
@@ -88,7 +86,7 @@ public class AchievementHunter extends ScenarioListener implements EventExecutor
 	}
 
 	private boolean shouldAddHeart(Event event) {
-		if (PaperLib.getMinecraftVersion() < 12) {
+		if (!VersionUtils.isAtLeast(12)) {
 			return event instanceof PlayerAchievementAwardedEvent;
 		} else {
 			return event instanceof PlayerAdvancementDoneEvent && isValidAdvancement(event);

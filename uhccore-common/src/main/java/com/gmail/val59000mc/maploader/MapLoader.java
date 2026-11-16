@@ -101,7 +101,7 @@ public class MapLoader {
 
 	private void removeOceans() {
 		try {
-			if (PaperLib.getMinecraftVersion() <= 16) {
+			if (!VersionUtils.isAtLeast(17)) {
 				LOGGER.fine("Removing oceans using BiomeMapping");
 				removeOceansUsingBiomeMapping();
 			} else {
@@ -502,7 +502,7 @@ public class MapLoader {
 
 		chunkLoaderTask.printSettings();
 
-		if (PaperLib.isPaper() && PaperLib.getMinecraftVersion() >= 13){
+		if (PaperLib.isPaper() && VersionUtils.isAtLeast(13)){
 			Bukkit.getScheduler().runTaskAsynchronously(UhcCore.getPlugin(), chunkLoaderTask);
 		}else {
 			Bukkit.getScheduler().runTask(UhcCore.getPlugin(), chunkLoaderTask);

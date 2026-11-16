@@ -350,7 +350,7 @@ public class PlayerManager {
 		player.getInventory().clear();
 
 		// PlayerInventory#clear does not clear armor contents on Spigot < 1.9
-		if (!PaperLib.isVersion(9)) {
+		if (!VersionUtils.isAtLeast(9)) {
 			player.getInventory().setArmorContents(new ItemStack[4]);
 		}
 	}
@@ -627,7 +627,7 @@ public class PlayerManager {
 			}
 		}
 		// PlayerInventory#getContents does not include armor contents on Spigot < 1.9
-		if (!PaperLib.isVersion(9)) {
+		if (!VersionUtils.isAtLeast(9)) {
 			for (ItemStack item : player.getInventory().getArmorContents()) {
 				// PlayerInventory#getArmorContents maps null items to AIR on Spigot < 1.9
 				if (item.getType() != Material.AIR) {

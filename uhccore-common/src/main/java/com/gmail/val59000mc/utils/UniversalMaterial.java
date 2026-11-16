@@ -1,7 +1,5 @@
 package com.gmail.val59000mc.utils;
 
-import io.papermc.lib.PaperLib;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -480,7 +478,7 @@ public enum UniversalMaterial {
 			try {
 				// Use matchMaterial defensively so running on 1.8-1.12 fossils won't throw
 				// unhandled IllegalArgumentExceptions when modern blocks are checked.
-				if (PaperLib.getMinecraftVersion() > 12) {
+				if (VersionUtils.isAtLeast(13)) {
 					material = Material.matchMaterial(name13);
 					if (material == null && name8 != null) {
 						material = Material.matchMaterial(name8);
@@ -752,7 +750,7 @@ public enum UniversalMaterial {
 		if (type == null) {
 			return false;
 		}
-		if (PaperLib.isVersion(13)) {
+		if (VersionUtils.isAtLeast(13)) {
 			return block.getType() == type;
 		} else {
 			return block.getType() == type && (block.getData() & dataValueMask8) == dataValue8;
@@ -767,7 +765,7 @@ public enum UniversalMaterial {
 		if (type == null) {
 			return false;
 		}
-		if (PaperLib.isVersion(13)) {
+		if (VersionUtils.isAtLeast(13)) {
 			return itemStack.getType() == type;
 		} else {
 			return itemStack.getType() == type && (itemStack.getDurability() & dataValueMask8) == dataValue8;

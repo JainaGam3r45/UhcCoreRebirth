@@ -21,8 +21,6 @@ import com.gmail.val59000mc.utils.UniversalMaterial;
 import com.gmail.val59000mc.utils.UniversalSound;
 import com.gmail.val59000mc.utils.VersionUtils;
 
-import io.papermc.lib.PaperLib;
-
 public class FastLeavesDecayListener extends ScenarioListener{
 
 	// Leaf decay uses 6-connectivity
@@ -67,7 +65,7 @@ public class FastLeavesDecayListener extends ScenarioListener{
 
 	private void decayNeighbors(Block block) {
 		// See https://minecraft.wiki/w/History_of_leaf_decay
-		final int decayRange = PaperLib.isVersion(13) ? 6 : 4;
+		final int decayRange = VersionUtils.isAtLeast(13) ? 6 : 4;
 
 		for (BlockFace face : NEIGHBOURS) {
 			final Block relative = block.getRelative(face);

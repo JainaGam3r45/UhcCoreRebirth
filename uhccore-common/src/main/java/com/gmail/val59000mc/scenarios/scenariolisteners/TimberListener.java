@@ -17,8 +17,7 @@ import com.gmail.val59000mc.scenarios.Option;
 import com.gmail.val59000mc.scenarios.ScenarioListener;
 import com.gmail.val59000mc.utils.FloodFill;
 import com.gmail.val59000mc.utils.UniversalMaterial;
-
-import io.papermc.lib.PaperLib;
+import com.gmail.val59000mc.utils.VersionUtils;
 
 public class TimberListener extends ScenarioListener {
 
@@ -94,7 +93,7 @@ public class TimberListener extends ScenarioListener {
 	}
 
 	private ItemStack getPlanksForLog(Block log) {
-		if (PaperLib.getMinecraftVersion() >= 13) {
+		if (VersionUtils.isAtLeast(13)) {
 			String name = log.getType().name();
 			String woodType;
 			if (name.contains("DARK_OAK")) woodType = "DARK_OAK";

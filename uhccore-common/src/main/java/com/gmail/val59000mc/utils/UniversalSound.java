@@ -4,8 +4,6 @@ import java.util.Optional;
 
 import org.bukkit.Sound;
 
-import io.papermc.lib.PaperLib;
-
 public enum UniversalSound {
 	CLICK("CLICK", "UI_BUTTON_CLICK", "UI_BUTTON_CLICK"),
 	ENDERDRAGON_GROWL("ENDERDRAGON_GROWL", "ENTITY_ENDERDRAGON_GROWL", "ENTITY_ENDER_DRAGON_GROWL"),
@@ -26,9 +24,9 @@ public enum UniversalSound {
 
 	public Sound getSound(){
 		if (sound == null){
-			if (PaperLib.getMinecraftVersion() < 9){
+			if (!VersionUtils.isAtLeast(9)){
 				sound = Sound.valueOf(name8);
-			}else if (PaperLib.getMinecraftVersion() < 13){
+			}else if (!VersionUtils.isAtLeast(13)){
 				sound = Sound.valueOf(name9);
 			}else {
 				sound = Sound.valueOf(name13);

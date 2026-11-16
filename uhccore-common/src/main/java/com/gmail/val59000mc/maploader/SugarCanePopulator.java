@@ -3,7 +3,6 @@ package com.gmail.val59000mc.maploader;
 import com.gmail.val59000mc.utils.UniversalMaterial;
 import com.gmail.val59000mc.utils.VersionUtils;
 
-import io.papermc.lib.PaperLib;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -71,7 +70,7 @@ public class SugarCanePopulator extends BlockPopulator{
 			// Skip non-water blocks
 			if (neighbor.getType() != UniversalMaterial.STATIONARY_WATER.getType()) continue;
 			// Skip non-source blocks (e.g. flowing water)
-			if (PaperLib.getMinecraftVersion() > 12) {
+			if (VersionUtils.isAtLeast(13)) {
 				Levelled data = (Levelled) neighbor.getBlockData();
 				if (data.getLevel() != 0) continue;
 			} else {

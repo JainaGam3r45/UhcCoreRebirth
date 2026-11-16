@@ -54,7 +54,7 @@ public class LocationUtils {
 		// which was either a mistake, or intentional, in order avoid breaking API changes when vanilla switched
 		// to the new heightmap system in 1.13.
 
-		if (PaperLib.isVersion(15, 2)) {
+		if (VersionUtils.isAtLeast(15, 2)) {
 			// MOTION_BLOCKING heightmap + 0, 1.15.2+
 			return world.getHighestBlockYAt(x, z);
 		} else {
@@ -208,7 +208,7 @@ public class LocationUtils {
 		// chunk on these Minecraft versions, in order to find a safe
 		// surface position ON TOP of any eventual tree.
 		// See also: https://gitlab.com/uhccore/uhccore/-/issues/56
-		if (!PaperLib.isVersion(13)) {
+		if (!VersionUtils.isAtLeast(13)) {
 			fullyPopulateChunk(world.getChunkAt(x / 16, z / 16));
 		}
 

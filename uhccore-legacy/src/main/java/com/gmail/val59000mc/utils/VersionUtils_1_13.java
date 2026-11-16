@@ -11,8 +11,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
-import io.papermc.lib.PaperLib;
-
 import org.apache.commons.lang.Validate;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
@@ -255,7 +253,7 @@ public class VersionUtils_1_13 extends VersionUtils{
 					modifierObject.addProperty("slot", modifier.getSlot().name());
 				}
 				// AttributeModifier#getUniqueId() is broken (throws exception) on Minecraft 1.21+ because namespaced keys are now used instead
-				if (!PaperLib.isVersion(21)) {
+				if (!VersionUtils.isAtLeast(21)) {
 					modifierObject.addProperty("uuid", modifier.getUniqueId().toString());
 				}
 				modifiersJson.add(modifierObject);
