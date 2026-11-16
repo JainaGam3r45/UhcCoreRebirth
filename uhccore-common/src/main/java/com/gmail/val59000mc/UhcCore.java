@@ -7,6 +7,7 @@ import com.gmail.val59000mc.game.GameManager;
 import com.gmail.val59000mc.scenarios.scenariolisteners.TimebombListener;
 import com.gmail.val59000mc.utils.PluginForwardingHandler;
 import com.gmail.val59000mc.utils.UpdateChecker;
+import com.gmail.val59000mc.versionadapters.ServerVersion;
 import com.gmail.val59000mc.versionadapters.VersionAdapterLoader;
 
 import org.bukkit.Bukkit;
@@ -15,6 +16,9 @@ import org.bukkit.plugin.java.JavaPlugin;
 public class UhcCore extends JavaPlugin{
 
 	private static final Logger LOGGER = Logger.getLogger(UhcCore.class.getCanonicalName());
+	// Only the Modern jar ships this. Looked up as a resource because loading the class
+	// on an old Java runtime blows up with UnsupportedClassVersionError.
+	private static final String MODERN_JAR_MARKER = "com/gmail/val59000mc/utils/ModernVersionUtils.class";
 
 	private static UhcCore pl;
 	private static VersionAdapterLoader versionAdapterLoader;
@@ -24,6 +28,10 @@ public class UhcCore extends JavaPlugin{
 	@Override
 	public void onEnable(){
 		pl = this;
+		if (!isRightJarForServer()) {
+			getServer().getPluginManager().disablePlugin(this);
+			return;
+		}
 		forwardingLogger = PluginForwardingHandler.createForwardingLogger(this);
 		gameManager = new GameManager();
 
@@ -41,6 +49,25 @@ public class UhcCore extends JavaPlugin{
 		} else {
 			LOGGER.warning("NOTE: UHC is disabled, by the enable-uhc option in plugins/UhcCore/config.yml");
 		}
+	}
+
+	private boolean isRightJarForServer() {
+		final ServerVersion server = ServerVersion.current();
+		if (!server.isKnown()) {
+			// Can't tell, so don't send anyone off to download the wrong jar
+			return true;
+		}
+		final boolean modernJar = getClassLoader().getResource(MODERN_JAR_MARKER) != null;
+		if (modernJar && !ServerVersion.isVersion(21)) {
+			getLogger().severe("This is the Modern jar (1.21+) but the server runs " + server
+					+ ". Use UhcCoreRebirth-Legacy for 1.8.8-1.20.4.");
+			return false;
+		}
+		if (!modernJar && ServerVersion.isVersion(21)) {
+			getLogger().warning("Running the Legacy jar on " + server
+					+ ". Switch to UhcCoreRebirth-Modern, it's the one built for 1.21+.");
+		}
+		return true;
 	}
 
 	@Override
