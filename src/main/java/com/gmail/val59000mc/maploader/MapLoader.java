@@ -18,6 +18,7 @@ import org.apache.commons.lang.Validate;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Difficulty;
+import org.bukkit.GameRule;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.World.Environment;
@@ -389,21 +390,32 @@ public class MapLoader {
 		if (!healthRegen){
 			VersionUtils.getVersionUtils().setGameRuleValue(world, NATURAL_REGENERATION, false);
 		}
-		if (!locatorBar && PaperLib.isVersion(21)) {
-			VersionUtils.getVersionUtils().setGameRuleValue(world, LOCATOR_BAR, false);
+		if (!locatorBar) {
+			setGameRuleIfAvailable(world, LOCATOR_BAR, false);
 		}
-		if (PaperLib.isVersion(20, 5)) {
+		if (VersionUtils.isAtLeast(20, 5)) {
 			int spawnChunkRadius = config.get(MainConfig.SPAWN_CHUNK_RADIUS);
-			VersionUtils.getVersionUtils().setGameRuleValue(world, SPAWN_CHUNK_RADIUS, spawnChunkRadius);
+			setGameRuleIfAvailable(world, SPAWN_CHUNK_RADIUS, spawnChunkRadius);
 		}
-		if (!announceAdvancements && PaperLib.getMinecraftVersion() >= 12){
-			VersionUtils.getVersionUtils().setGameRuleValue(world, ANNOUNCE_ADVANCEMENTS, false);
+		if (!announceAdvancements && VersionUtils.isAtLeast(12)){
+			setGameRuleIfAvailable(world, ANNOUNCE_ADVANCEMENTS, false);
 		}
 		VersionUtils.getVersionUtils().setGameRuleValue(world, COMMAND_BLOCK_OUTPUT, false);
 		VersionUtils.getVersionUtils().setGameRuleValue(world, LOG_ADMIN_COMMANDS, false);
 		world.setDifficulty(difficulty);
 
 		setWorldBorder(world, 0, 0, borderSideLength);
+	}
+
+	private void setGameRuleIfAvailable(World world, String gameRuleName, Object value) {
+		try {
+			GameRule<?> rule = GameRule.getByName(gameRuleName);
+			if (rule != null) {
+				VersionUtils.getVersionUtils().setGameRuleValue(world, gameRuleName, value);
+			}
+		} catch (Throwable ignored) {
+			// Game rule not available on this server version
+		}
 	}
 
 	public void setWorldBorder(World world, int x, int z, double sideLength) {

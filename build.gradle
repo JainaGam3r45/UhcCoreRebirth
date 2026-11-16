@@ -79,7 +79,7 @@ dependencies {
 	shadowJar project(":version-adapters:spigot_1_20_5")
 	shadowJar project(":version-adapters:chunky")
 	implementation ":BiomeMapping-1.3"
-
+	testImplementation "junit:junit:4.13.2"
 }
 
 java {
@@ -199,8 +199,14 @@ int getJavaVersionFor(String mcVersion) {
 	if (versionNumbers.length < 2) {
 		return 21
 	}
+	int majorVersion = Integer.parseInt(versionNumbers[0])
 	int minorVersion = Integer.parseInt(versionNumbers[1])
 	int patchVersion = versionNumbers.length >= 3 ? Integer.parseInt(versionNumbers[2]) : 0
+
+	if (majorVersion >= 26) {
+		return minorVersion >= 4 ? 25 : 21
+	}
+
 	switch (minorVersion) {
 		case 8..16: return 8
 		case 17: return 16

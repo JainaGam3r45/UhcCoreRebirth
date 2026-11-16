@@ -14,6 +14,7 @@ import com.gmail.val59000mc.versionadapters.adapters.SetTeamColorAdapter;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.bukkit.Bukkit;
@@ -188,6 +189,8 @@ public class ScoreboardHandler {
 		}
 	}
 
+	private static boolean loggedReadOnlyScoreWarning = false;
+
 	// Workaround for https://bugs.mojang.com/browse/MC-111729
 	// On 1.20.3+, vanilla made HEALTH criteria strictly read-only (MC-163943), causing score.setScore()
 	// to throw an IllegalStateException. We punch through to NMS Scoreboard via reflection to force the initial value.
@@ -205,9 +208,14 @@ public class ScoreboardHandler {
 				Object nmsObjective = getHandleObjective.invoke(craftObjective);
 
 				Method getOrCreateScore = null;
+				// Check for 3-parameter (ScoreHolder/String, Objective, boolean) or 2-parameter (ScoreHolder/String, Objective) methods
 				for (Method m : nmsScoreboard.getClass().getMethods()) {
 					Class<?>[] params = m.getParameterTypes();
 					if (params.length == 3 && params[2] == boolean.class && params[1].isAssignableFrom(nmsObjective.getClass())) {
+						getOrCreateScore = m;
+						break;
+					}
+					if (params.length == 2 && params[1].isAssignableFrom(nmsObjective.getClass())) {
 						getOrCreateScore = m;
 						break;
 					}
@@ -216,6 +224,11 @@ public class ScoreboardHandler {
 					for (Method m : nmsScoreboard.getClass().getDeclaredMethods()) {
 						Class<?>[] params = m.getParameterTypes();
 						if (params.length == 3 && params[2] == boolean.class && params[1].isAssignableFrom(nmsObjective.getClass())) {
+							m.setAccessible(true);
+							getOrCreateScore = m;
+							break;
+						}
+						if (params.length == 2 && params[1].isAssignableFrom(nmsObjective.getClass())) {
 							m.setAccessible(true);
 							getOrCreateScore = m;
 							break;
@@ -250,10 +263,18 @@ public class ScoreboardHandler {
 						);
 					}
 
-					Object scoreAccess = getOrCreateScore.invoke(nmsScoreboard, holder, nmsObjective, true);
+					Object scoreAccess;
+					if (getOrCreateScore.getParameterCount() == 3) {
+						scoreAccess = getOrCreateScore.invoke(nmsScoreboard, holder, nmsObjective, true);
+					} else {
+						scoreAccess = getOrCreateScore.invoke(nmsScoreboard, holder, nmsObjective);
+					}
+
 					boolean scoreSet = false;
 					for (Method m : scoreAccess.getClass().getMethods()) {
-						if (m.getReturnType() == void.class && m.getParameterCount() == 1 && m.getParameterTypes()[0] == int.class) {
+						if ((m.getReturnType() == void.class || m.getReturnType() == int.class)
+								&& m.getParameterCount() == 1
+								&& m.getParameterTypes()[0] == int.class) {
 							m.invoke(scoreAccess, value);
 							scoreSet = true;
 							break;
@@ -261,7 +282,9 @@ public class ScoreboardHandler {
 					}
 					if (!scoreSet) {
 						for (Method m : scoreAccess.getClass().getDeclaredMethods()) {
-							if (m.getReturnType() == void.class && m.getParameterCount() == 1 && m.getParameterTypes()[0] == int.class) {
+							if ((m.getReturnType() == void.class || m.getReturnType() == int.class)
+									&& m.getParameterCount() == 1
+									&& m.getParameterTypes()[0] == int.class) {
 								m.setAccessible(true);
 								m.invoke(scoreAccess, value);
 								break;
@@ -269,8 +292,11 @@ public class ScoreboardHandler {
 						}
 					}
 				}
-			} catch (Exception ignored) {
-				// Silently fail if server internals diverge; health display will self-heal once the player takes damage.
+			} catch (Exception ex) {
+				if (!loggedReadOnlyScoreWarning) {
+					loggedReadOnlyScoreWarning = true;
+					LOGGER.log(Level.WARNING, "Failed to update read-only health score on scoreboard via reflection (suppressing further warnings): " + ex.getMessage());
+				}
 			}
 		}
 	}

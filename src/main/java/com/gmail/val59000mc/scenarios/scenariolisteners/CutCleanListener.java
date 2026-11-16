@@ -2,6 +2,7 @@ package com.gmail.val59000mc.scenarios.scenariolisteners;
 
 import java.util.Iterator;
 import java.util.Optional;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -103,7 +104,9 @@ public class CutCleanListener extends ScenarioListener{
 			int count = 1;
 
 			if (oreType.get() == OreType.COPPER) {
-				count = java.util.concurrent.ThreadLocalRandom.current().nextInt(2, 6);
+				count = ThreadLocalRandom.current().nextInt(2, 6);
+			} else if (oreType.get() == OreType.RAW_COPPER_BLOCK) {
+				count = 1;
 			}
 
 			if (OreType.isGold(type) && isEnabled(Scenario.DOUBLE_GOLD)) {
