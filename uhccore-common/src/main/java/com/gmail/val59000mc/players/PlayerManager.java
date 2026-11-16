@@ -26,8 +26,6 @@ import com.gmail.val59000mc.utils.snapshot.ItemStackSnapshot;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
 
-import io.papermc.lib.PaperLib;
-
 import org.bukkit.*;
 import org.bukkit.entity.*;
 import org.bukkit.inventory.EntityEquipment;
