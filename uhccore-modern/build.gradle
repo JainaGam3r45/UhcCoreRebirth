@@ -1,0 +1,88 @@
+plugins {
+	id "java-library"
+	id "com.gradleup.shadow"
+}
+
+repositories {
+	mavenCentral()
+	maven {
+		name = "papermc"
+		url = "https://repo.papermc.io/repository/maven-public/"
+	}
+	maven {
+		name = "spigotmc"
+		url = "https://hub.spigotmc.org/nexus/content/groups/public/"
+	}
+	maven {
+		name = "jitpack"
+		url = "https://jitpack.io"
+	}
+	maven {
+		name = "codemc"
+		url = "https://repo.codemc.io/repository/maven-snapshots/"
+	}
+	maven {
+		name = "placeholderapi"
+		url = "https://repo.extendedclip.com/releases/"
+	}
+	flatDir {
+		dirs "$rootDir/libs"
+	}
+}
+
+configurations.register("shadowJar")
+
+dependencies {
+	compileOnly "io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT"
+	compileOnly "com.google.code.findbugs:jsr305:3.0.2"
+	compileOnly("com.github.MilkBowl:VaultAPI:1.7") {
+		exclude group: "org.bukkit"
+		exclude group: "org.spigotmc"
+	}
+	compileOnly("me.clip:placeholderapi:2.11.5") {
+		exclude group: "org.bukkit"
+		exclude group: "org.spigotmc"
+	}
+	compileOnly("net.dmulloy2:ProtocolLib:5.3.0") {
+		exclude group: "org.bukkit"
+		exclude group: "org.spigotmc"
+	}
+	implementation(project(":uhccore-common")) {
+		exclude group: "org.bukkit"
+		exclude group: "org.spigotmc"
+	}
+	shadowJar project(":version-adapters:spigot_1_20_5")
+	shadowJar project(":version-adapters:chunky")
+}
+
+java {
+	toolchain.languageVersion = JavaLanguageVersion.of(21)
+}
+
+tasks.withType(JavaCompile).configureEach {
+	options.release = 21
+}
+
+tasks.named("shadowJar") {
+	archiveBaseName = "UhcCoreRebirth-Modern"
+	archiveClassifier = ""
+	archiveVersion = rootProject.version.toString()
+	configurations = project.providers.zip(
+		project.configurations.named("runtimeClasspath"),
+		project.configurations.named("shadowJar")
+	) { rc, sj -> [rc, sj] }
+
+	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+	mergeServiceFiles()
+	filesMatching("META-INF/services/**") {
+		duplicatesStrategy = DuplicatesStrategy.INCLUDE
+	}
+
+	relocate "io.papermc.lib", "com.gmail.val59000mc.paperlib"
+	relocate "net.wesjd.anvilgui", "com.gmail.val59000mc.anvilgui"
+	relocate "com.pieterdebot.biomemapping", "com.gmail.val59000mc.biomemapping"
+}
+
+tasks.named("assemble") {
+	dependsOn tasks.named("shadowJar")
+}

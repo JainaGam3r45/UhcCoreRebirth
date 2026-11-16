@@ -93,18 +93,43 @@ public abstract class VersionUtils{
 		return isAtLeast(legacyMinor, legacyPatch);
 	}
 
+	public static void setVersionUtils(VersionUtils utils){
+		versionUtils = utils;
+	}
+
 	public static VersionUtils getVersionUtils(){
 		if (versionUtils == null){
-			if (isAtLeast(15)){
-				versionUtils = new VersionUtils_1_15();
-			}else if (isAtLeast(14)){
-				versionUtils = new VersionUtils_1_14();
-			}else if (isAtLeast(13)){
-				versionUtils = new VersionUtils_1_13();
-			}else if (isAtLeast(12)){
-				versionUtils = new VersionUtils_1_12();
-			}else {
-				versionUtils = new VersionUtils_1_8();
+			try {
+				if (getServerVersion().getMajor() >= 26 || isAtLeast(1, 21, 0)) {
+					try {
+						Class<?> modernClass = Class.forName("com.gmail.val59000mc.utils.ModernVersionUtils");
+						versionUtils = (VersionUtils) modernClass.getDeclaredConstructor().newInstance();
+					} catch (Throwable ignored) {
+					}
+				}
+				if (versionUtils == null) {
+					String className;
+					if (isAtLeast(15)){
+						className = "com.gmail.val59000mc.utils.VersionUtils_1_15";
+					}else if (isAtLeast(14)){
+						className = "com.gmail.val59000mc.utils.VersionUtils_1_14";
+					}else if (isAtLeast(13)){
+						className = "com.gmail.val59000mc.utils.VersionUtils_1_13";
+					}else if (isAtLeast(12)){
+						className = "com.gmail.val59000mc.utils.VersionUtils_1_12";
+					}else {
+						className = "com.gmail.val59000mc.utils.VersionUtils_1_8";
+					}
+					try {
+						Class<?> legacyClass = Class.forName(className);
+						versionUtils = (VersionUtils) legacyClass.getDeclaredConstructor().newInstance();
+					} catch (Throwable t) {
+						Class<?> modernClass = Class.forName("com.gmail.val59000mc.utils.ModernVersionUtils");
+						versionUtils = (VersionUtils) modernClass.getDeclaredConstructor().newInstance();
+					}
+				}
+			} catch (Exception ex) {
+				throw new IllegalStateException("Failed to initialize VersionUtils", ex);
 			}
 		}
 		return versionUtils;

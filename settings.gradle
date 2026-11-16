@@ -4,6 +4,9 @@ plugins {
 
 rootProject.name = "uhccore"
 
+include "uhccore-common"
+include "uhccore-legacy"
+include "uhccore-modern"
 include "Support-WorldEdit-6"
 include "Support-WorldEdit-7"
 include "version-adapters"
