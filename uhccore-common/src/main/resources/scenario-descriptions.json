@@ -95,7 +95,7 @@
 	"no_clean":{
 		"name":"No Clean",
 		"description":[
-			"Gives you 30 seconds of invincibility after a kill.",
+			"Gives you 20 seconds of invincibility after a kill.",
 			"Attacking other players will remove this PvP Protection."
 		]
 	},
