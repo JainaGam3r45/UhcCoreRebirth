@@ -195,6 +195,39 @@ public class LocationUtils {
 		}
 	}
 
+	/**
+	 * Returns a safe surface location as close as possible to the given column.
+	 *
+	 * <p>
+	 *     Columns are checked in growing square rings up to {@code radius}
+	 *     blocks away. Unlike {@link #getRandomSpawnLocation(World, int)} there
+	 *     is no blind fallback: the caller decides what to do when every column
+	 *     is a lava lake or a cactus field.
+	 * </p>
+	 *
+	 * @param world the overworld-like world to search in
+	 * @param x the X-coordinate of the preferred column
+	 * @param z the Z-coordinate of the preferred column
+	 * @param radius how many blocks away from the column to look
+	 * @return a location standing on top of the surface, or {@code null} if no column was safe
+	 */
+	public static Location getSafeSurfaceLocationNear(World world, int x, int z, int radius) {
+		for (int ring = 0; ring <= radius; ring++) {
+			for (int dx = -ring; dx <= ring; dx++) {
+				for (int dz = -ring; dz <= ring; dz++) {
+					if (Math.max(Math.abs(dx), Math.abs(dz)) != ring) {
+						continue;
+					}
+					final Block safeSpot = findSafeSpawnAt(world, x + dx, z + dz);
+					if (safeSpot != null) {
+						return safeSpot.getLocation().add(0.5, 1, 0.5);
+					}
+				}
+			}
+		}
+		return null;
+	}
+
 	private static Block findSafeSpawnAt(World world, int x, int z) {
 		// On Minecraft 1.8 - 1.12, World#getHighestBlockYAt and
 		// Location#getBlock does not wait for the chunk to become fully

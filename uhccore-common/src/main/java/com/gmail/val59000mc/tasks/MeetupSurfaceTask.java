@@ -1,0 +1,173 @@
+package com.gmail.val59000mc.tasks;
+
+import com.gmail.val59000mc.UhcCore;
+import com.gmail.val59000mc.configuration.MainConfig;
+import com.gmail.val59000mc.exceptions.UhcPlayerNotOnlineException;
+import com.gmail.val59000mc.game.GameManager;
+import com.gmail.val59000mc.game.GameState;
+import com.gmail.val59000mc.languages.Lang;
+import com.gmail.val59000mc.players.UhcPlayer;
+import com.gmail.val59000mc.utils.LocationUtils;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.World;
+import org.bukkit.WorldBorder;
+import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitTask;
+
+import java.util.ArrayDeque;
+import java.util.Deque;
+
+/**
+ * Keeps the center deathmatch on the surface: anyone who digs in to wait out
+ * the shrinking border, or drifts outside it, gets dragged back up inside it.
+ */
+public class MeetupSurfaceTask implements Runnable {
+
+	// Must stay bigger than SEARCH_RADIUS, otherwise the safe spot search can
+	// land a player right back outside a border that keeps closing in.
+	private static final int BORDER_MARGIN = 3;
+	private static final int SEARCH_RADIUS = 2;
+	// Two blocks out reaches past the walls of a 1x1 or 2x2 shaft (and the middle of a 3x3).
+	private static final int SHAFT_PROBE = 2;
+
+	private final GameManager gameManager;
+	private final World world;
+	private final int maxDepth;
+	private final int checkIntervalTicks;
+	private final Deque<UhcPlayer> pending = new ArrayDeque<>();
+	private BukkitTask task;
+	private int ticks;
+
+	public MeetupSurfaceTask(GameManager gameManager, World world) {
+		this.gameManager = gameManager;
+		this.world = world;
+		MainConfig config = gameManager.getConfig();
+		this.maxDepth = Math.max(0, config.get(MainConfig.DEATHMATCH_SURFACE_MAX_DEPTH));
+		this.checkIntervalTicks = 20 * Math.max(1, config.get(MainConfig.DEATHMATCH_SURFACE_CHECK_INTERVAL));
+	}
+
+	public void start() {
+		task = Bukkit.getScheduler().runTaskTimer(UhcCore.getPlugin(), this, 1L, 1L);
+	}
+
+	@Override
+	public void run() {
+		// Game ended or got reset: nothing left to babysit.
+		if (gameManager.getGameState() != GameState.DEATHMATCH) {
+			task.cancel();
+			pending.clear();
+			return;
+		}
+
+		if (ticks++ % checkIntervalTicks == 0) {
+			queueStrandedPlayers();
+		}
+
+		// One teleport per tick, so a meetup full of cave campers doesn't turn
+		// into a single fat lag spike (1.8 also loads a 5x5 chunk area per spot).
+		UhcPlayer next = pending.poll();
+		if (next != null) {
+			pullUp(next);
+		}
+	}
+
+	private void queueStrandedPlayers() {
+		for (UhcPlayer uhcPlayer : gameManager.getPlayerManager().getOnlinePlayingPlayers()) {
+			if (uhcPlayer.isFrozen() || pending.contains(uhcPlayer)) {
+				continue;
+			}
+
+			try {
+				if (isStranded(uhcPlayer.getPlayer())) {
+					pending.add(uhcPlayer);
+				}
+			} catch (UhcPlayerNotOnlineException ignored) {
+				// Logged off between the online filter and here, the next check picks them up again.
+			}
+		}
+	}
+
+	private boolean isStranded(Player player) {
+		Location location = player.getLocation();
+		if (!world.equals(location.getWorld())) {
+			return false;
+		}
+
+		WorldBorder border = world.getWorldBorder();
+		double halfSize = border.getSize() / 2;
+		Location center = border.getCenter();
+		if (Math.abs(location.getX() - center.getX()) > halfSize || Math.abs(location.getZ() - center.getZ()) > halfSize) {
+			return true;
+		}
+
+		int x = location.getBlockX();
+		int z = location.getBlockZ();
+		int minSolidY = location.getBlockY() + maxDepth + 1;
+
+		// Solid roof over their head: classic cave camping.
+		if (hasSolidBlockFrom(x, z, minSolidY)) {
+			return true;
+		}
+
+		// Digging straight down drags the heightmap of their own column with them,
+		// so a shaft only shows up when every wall around it is still tall.
+		// Requiring all four sides keeps people standing next to a cliff out of it.
+		return hasSolidBlockFrom(x + SHAFT_PROBE, z, minSolidY)
+			&& hasSolidBlockFrom(x - SHAFT_PROBE, z, minSolidY)
+			&& hasSolidBlockFrom(x, z + SHAFT_PROBE, minSolidY)
+			&& hasSolidBlockFrom(x, z - SHAFT_PROBE, minSolidY);
+	}
+
+	/**
+	 * Scans the column from its heightmap top down to {@code minY}, looking for
+	 * a block that actually hides a player. Leaves, glass and water don't
+	 * occlude, so jungle canopies and lakes never count as "underground".
+	 */
+	private boolean hasSolidBlockFrom(int x, int z, int minY) {
+		// The scan stops at minY, which sits above the player's feet, so no need for
+		// World#getMinHeight (1.17+) to stay clear of negative Y on modern worlds.
+		for (int y = LocationUtils.getSurfaceLevelAt(world, x, z); y >= minY; y--) {
+			if (world.getBlockAt(x, y, z).getType().isOccluding()) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private void pullUp(UhcPlayer uhcPlayer) {
+		Player player;
+		try {
+			player = uhcPlayer.getPlayer();
+		} catch (UhcPlayerNotOnlineException e) {
+			return;
+		}
+
+		// They had up to a few ticks in the queue to climb out, die or log off.
+		if (!uhcPlayer.isPlaying() || uhcPlayer.isFrozen() || !isStranded(player)) {
+			return;
+		}
+
+		WorldBorder border = world.getWorldBorder();
+		Location center = border.getCenter();
+		double limit = Math.max(0, border.getSize() / 2 - BORDER_MARGIN);
+		Location location = player.getLocation();
+		int x = (int) Math.floor(clamp(location.getX(), center.getX() - limit, center.getX() + limit));
+		int z = (int) Math.floor(clamp(location.getZ(), center.getZ() - limit, center.getZ() + limit));
+
+		Location target = LocationUtils.getSafeSurfaceLocationNear(world, x, z, SEARCH_RADIUS);
+		if (target == null) {
+			// Lava lake or cactus field up there. Better to leave them be until the
+			// next check than to drop them into lava ourselves.
+			return;
+		}
+		player.setFallDistance(0);
+		UhcPlayer.teleport(player, LocationUtils.withSameDirection(target, player));
+		uhcPlayer.sendMessage(Lang.GAME_MEETUP_PULLED_TO_SURFACE);
+	}
+
+	private static double clamp(double value, double min, double max) {
+		return Math.max(min, Math.min(max, value));
+	}
+
+}

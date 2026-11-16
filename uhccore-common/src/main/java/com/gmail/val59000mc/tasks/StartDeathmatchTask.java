@@ -40,6 +40,11 @@ public class StartDeathmatchTask implements Runnable{
 				final int borderTimeToShrink = gameManager.getConfig().get(MainConfig.DEATHMATCH_TIME_TO_SHRINK);
 				gameManager.getMapLoader().getUhcWorld(World.Environment.NORMAL).getWorldBorder().setSize(borderEndSideLength, borderTimeToShrink);
 				gameManager.getMapLoader().getUhcWorld(World.Environment.NORMAL).getWorldBorder().setDamageBuffer(1);
+
+				if (gameManager.getConfig().get(MainConfig.DEATHMATCH_SURFACE_ENABLE)) {
+					new MeetupSurfaceTask(gameManager, gameManager.getMapLoader().getUhcWorld(World.Environment.NORMAL)).start();
+					gameManager.broadcastInfoMessage(Lang.GAME_MEETUP_SURFACE_ENABLED);
+				}
 			}
 		} else if (timeBeforePVP <= 5 || (timeBeforePVP % 5 == 0)) {
 			gameManager.broadcastInfoMessage(Lang.PVP_START_IN+" "+timeBeforePVP+"s");

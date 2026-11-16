@@ -144,6 +144,9 @@ public class MainConfig extends YamlFile {
 	public static final BasicOption<Integer> DEATHMATCH_START_SIZE = new BasicOption<>("deathmatch.center-deathmatch.start-size",125);
 	public static final BasicOption<Integer> DEATHMATCH_END_SIZE = new BasicOption<>("deathmatch.center-deathmatch.end-size",50);
 	public static final BasicOption<Integer> DEATHMATCH_TIME_TO_SHRINK = new BasicOption<>("deathmatch.center-deathmatch.time-to-shrink",600);
+	public static final BasicOption<Boolean> DEATHMATCH_SURFACE_ENABLE = new BasicOption<>("deathmatch.center-deathmatch.surface.enable",false);
+	public static final BasicOption<Integer> DEATHMATCH_SURFACE_MAX_DEPTH = new BasicOption<>("deathmatch.center-deathmatch.surface.max-depth",10);
+	public static final BasicOption<Integer> DEATHMATCH_SURFACE_CHECK_INTERVAL = new BasicOption<>("deathmatch.center-deathmatch.surface.check-interval",5);
 
 	public static final BasicOption<Boolean> AUTO_ASSIGN_PLAYER_TO_TEAM = new BasicOption<>("auto-assign-new-player-team",false);
 	public static final BasicOption<Boolean> FORCE_ASSIGN_SOLO_PLAYER_TO_TEAM_WHEN_STARTING = new BasicOption<>("force-assign-solo-player-to-team-when-starting",false);

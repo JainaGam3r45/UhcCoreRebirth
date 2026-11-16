@@ -528,6 +528,15 @@ deathmatch:
     end-size: 50
     #If moving is set to true, the time in seconds for the border to shrink to end-size
     time-to-shrink: 600
+    # Keep the meetup on the surface while the border shrinks. Players hiding underground
+    # or caught outside the border get teleported to a safe surface spot inside it.
+    surface:
+      enable: false
+      # How many blocks of solid roof (or shaft walls) a player can have above them before getting pulled up.
+      # Leaves, glass and water don't count, so nobody gets yanked out from under a tree or out of a lake.
+      max-depth: 10
+      # How often, in seconds, players are checked
+      check-interval: 5
 
 # Having this set to true means the name of your uhc world don't change. This is not suggested since it may cause some worlds to not load correctly.
 # It's recommended to use 'lobby-in-default-world' if you want to use NPC's
