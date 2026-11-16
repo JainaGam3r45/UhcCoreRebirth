@@ -24,6 +24,12 @@ public class ElapsedTimeTask implements Runnable{
 
 	@Override
 	public void run() {
+		if (gameManager.isTimerPaused()) {
+			if (!gameManager.getGameState().equals(GameState.ENDED)) {
+				Bukkit.getScheduler().runTaskLater(UhcCore.getPlugin(), task, 20);
+			}
+			return;
+		}
 
 		long time = gameManager.getElapsedTime() + 1;
 		gameManager.setElapsedTime(time);

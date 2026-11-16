@@ -76,6 +76,8 @@ public class GameManager{
 	private int episodeNumber;
 	private long remainingTime;
 	private long elapsedTime;
+	private volatile boolean timerPaused;
+	private EnablePVPTask enablePVPTask;
 
 	static{
 		gameManager = null;
@@ -98,6 +100,7 @@ public class GameManager{
 
 		episodeNumber = 0;
 		elapsedTime = 0;
+		timerPaused = false;
 	}
 
 	public static GameManager getGameManager(){
@@ -166,6 +169,49 @@ public class GameManager{
 
 	public synchronized void setElapsedTime(long time){
 		elapsedTime = time;
+	}
+
+	public boolean isTimerPaused() {
+		return timerPaused;
+	}
+
+	public void setTimerPaused(boolean timerPaused) {
+		this.timerPaused = timerPaused;
+	}
+
+	public boolean toggleTimerPause() {
+		this.timerPaused = !this.timerPaused;
+		return this.timerPaused;
+	}
+
+	public synchronized void adjustTimer(long secondsDiff) {
+		long oldTime = getElapsedTime();
+		long newTime = Math.max(0, oldTime + secondsDiff);
+		setElapsedTime(newTime);
+
+		long currentRemaining = getRemainingTime();
+		long newRemaining = Math.max(0, currentRemaining - secondsDiff);
+		setRemainingTime(newRemaining);
+
+		if (enablePVPTask != null) {
+			int currentPvp = enablePVPTask.getTimeBeforePvp();
+			int newPvp = (int) Math.max(0, currentPvp - secondsDiff);
+			enablePVPTask.setTimeBeforePvp(newPvp);
+			if (newPvp <= 0 && !getPvp() && getGameState() == GameState.PLAYING) {
+				setPvp(true);
+				broadcastInfoMessage(Lang.PVP_ENABLED);
+				getPlayerManager().playSoundToAll(UniversalSound.WITHER_SPAWN.getSound());
+			}
+		}
+
+		if (newRemaining <= 0 && getGameState() == GameState.PLAYING) {
+			deathmatchHandler.startDeathmatch();
+		}
+	}
+
+	public synchronized void setTimer(long seconds) {
+		long diff = seconds - getElapsedTime();
+		adjustTimer(diff);
 	}
 
 	public boolean getPvp() {
@@ -268,7 +314,8 @@ public class GameManager{
 
 		playerManager.startWatchPlayerPlayingTask();
 		Bukkit.getScheduler().runTaskAsynchronously(UhcCore.getPlugin(), new ElapsedTimeTask(this, customEventHandler));
-		Bukkit.getScheduler().runTaskAsynchronously(UhcCore.getPlugin(), new EnablePVPTask(this));
+		enablePVPTask = new EnablePVPTask(this);
+		Bukkit.getScheduler().runTaskAsynchronously(UhcCore.getPlugin(), enablePVPTask);
 
 		if (config.get(MainConfig.ENABLE_EPISODE_MARKERS)){
 			Bukkit.getScheduler().runTaskAsynchronously(UhcCore.getPlugin(), new EpisodeMarkersTask(this));

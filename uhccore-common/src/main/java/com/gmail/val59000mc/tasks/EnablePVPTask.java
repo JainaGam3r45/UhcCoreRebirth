@@ -18,13 +18,26 @@ public class EnablePVPTask implements Runnable{
 		timeBeforePvp = gameManager.getConfig().get(MainConfig.TIME_BEFORE_PVP);
 	}
 
+	public synchronized void setTimeBeforePvp(int timeBeforePvp) {
+		this.timeBeforePvp = timeBeforePvp;
+	}
+
+	public synchronized int getTimeBeforePvp() {
+		return timeBeforePvp;
+	}
+
 	@Override
 	public void run() {
 		if(!gameManager.getGameState().equals(GameState.PLAYING)) {
 			return; // Stop task
 		}
 
-		if(timeBeforePvp == 0){
+		if (gameManager.isTimerPaused()) {
+			Bukkit.getScheduler().runTaskLater(UhcCore.getPlugin(), this, 20);
+			return;
+		}
+
+		if(timeBeforePvp <= 0){
 			GameManager.getGameManager().setPvp(true);
 			GameManager.getGameManager().broadcastInfoMessage(Lang.PVP_ENABLED);
 			GameManager.getGameManager().getPlayerManager().playSoundToAll(UniversalSound.WITHER_SPAWN.getSound());

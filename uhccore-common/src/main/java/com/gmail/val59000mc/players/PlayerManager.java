@@ -249,7 +249,7 @@ public class PlayerManager {
 		}
 	}
 
-	private void autoAssignPlayerToTeam(UhcPlayer uhcPlayer) {
+	public void autoAssignPlayerToTeam(UhcPlayer uhcPlayer) {
 		GameManager gm = GameManager.getGameManager();
 
 		if (gm.getScenarioManager().isEnabled(Scenario.LOVE_AT_FIRST_SIGHT)){
@@ -761,6 +761,67 @@ public class PlayerManager {
 		Location safeLoc = LocationUtils.getRandomSpawnLocation(world, safeRadius);
 		if (safeLoc != null) {
 			player.teleport(safeLoc);
+		}
+	}
+
+	public void lateScatterPlayer(UhcPlayer uhcPlayer) {
+		uhcPlayer.setState(PlayerState.PLAYING);
+
+		try {
+			Player player = uhcPlayer.getPlayer();
+			if (player.isDead()) {
+				player.spigot().respawn();
+			}
+
+			clearPlayerInventory(player);
+			player.setFireTicks(0);
+
+			MainConfig cfg = GameManager.getGameManager().getConfig();
+			final int extraHalfHearts = cfg.get(MainConfig.ENABLE_EXTRA_HALF_HEARTS) ? cfg.get(MainConfig.EXTRA_HALF_HEARTS) : 0;
+			final double maxHealthBase = 20 + extraHalfHearts;
+			VersionUtils.getVersionUtils().setPlayerMaxHealth(player, maxHealthBase);
+			player.setHealth(maxHealthBase);
+
+			for (PotionEffect effect : player.getActivePotionEffects()) {
+				player.removePotionEffect(effect.getType());
+			}
+			for (PotionEffect effect : cfg.get(MainConfig.POTION_EFFECT_ON_START)) {
+				player.addPotionEffect(effect);
+			}
+
+			player.setGameMode(GameMode.SURVIVAL);
+			player.setAllowFlight(false);
+			player.setFlying(false);
+			player.setFoodLevel(20);
+			player.setSaturation(20f);
+			player.setExhaustion(0f);
+
+			UhcItems.giveGameItemTo(player, GameItem.COMPASS_ITEM);
+			UhcItems.giveGameItemTo(player, GameItem.CUSTOM_CRAFT_BOOK);
+			KitsManager.giveKitTo(player);
+
+			GameManager gm = GameManager.getGameManager();
+			World world = gm.getMapLoader().getUhcWorld(World.Environment.NORMAL);
+			double borderHalfSize = world.getWorldBorder().getSize() / 2.0;
+			int safeRadius = Math.max(10, (int) borderHalfSize - 15);
+			Location scatterLoc = LocationUtils.getRandomSpawnLocation(world, safeRadius);
+			if (scatterLoc != null) {
+				player.teleport(scatterLoc);
+			}
+
+			player.setNoDamageTicks(60);
+			uhcPlayer.setHasBeenTeleportedToLocation(true);
+
+			scoreboardHandler.setUpPlayerScoreboard(uhcPlayer, player);
+			scoreboardHandler.updatePlayerOnTab(uhcPlayer);
+			if (uhcPlayer.getTeam() != null) {
+				scoreboardHandler.updateTeamOnTab(uhcPlayer.getTeam());
+			}
+			ScoreboardType sbType = scoreboardHandler.getPlayerScoreboardType(uhcPlayer);
+			scoreboardHandler.updatePlayerSidebar(uhcPlayer, sbType);
+
+			Bukkit.getPluginManager().callEvent(new PlayerStartsPlayingEvent(uhcPlayer));
+		} catch (UhcPlayerNotOnlineException ignored) {
 		}
 	}
 

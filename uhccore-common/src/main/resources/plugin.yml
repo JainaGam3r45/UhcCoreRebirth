@@ -72,3 +72,10 @@ commands:
     description: "Heals a player to full health. If no player is specified, heals all players."
     usage: /<command> [player]
     permission: "uhc-core.commands.heal"
+permissions:
+  uhc-core.commands.latescatter:
+    description: "Allows scattering a player who joined late into the running game."
+    default: op
+  uhc-core.commands.timer:
+    description: "Allows adjusting or pausing the live game timer."
+    default: op

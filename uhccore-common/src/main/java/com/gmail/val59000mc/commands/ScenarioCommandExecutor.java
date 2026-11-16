@@ -18,12 +18,10 @@ public class ScenarioCommandExecutor implements CommandExecutor{
 
 	@Override
 	public boolean onCommand(CommandSender sender, Command command, String s, String[] args) {
-		if (args.length >= 2 && args[0].equalsIgnoreCase("revive")){
-			PluginCommand reviveCmd = Bukkit.getPluginCommand("revive");
-			if (reviveCmd != null) {
-				String[] reviveArgs = new String[args.length - 1];
-				System.arraycopy(args, 1, reviveArgs, 0, reviveArgs.length);
-				return reviveCmd.execute(sender, "revive", reviveArgs);
+		if (args.length >= 1 && (args[0].equalsIgnoreCase("revive") || args[0].equalsIgnoreCase("latescatter") || args[0].equalsIgnoreCase("timer"))){
+			PluginCommand uhcCmd = Bukkit.getPluginCommand("uhccore");
+			if (uhcCmd != null) {
+				return uhcCmd.execute(sender, "uhccore", args);
 			}
 		}
 

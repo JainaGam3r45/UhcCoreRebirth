@@ -1,14 +1,18 @@
 package com.gmail.val59000mc.commands;
 
 import com.gmail.val59000mc.UhcCore;
+import com.gmail.val59000mc.configuration.MainConfig;
 import com.gmail.val59000mc.exceptions.UhcPlayerNotOnlineException;
+import com.gmail.val59000mc.exceptions.UhcTeamException;
 import com.gmail.val59000mc.game.GameManager;
 import com.gmail.val59000mc.game.GameState;
 import com.gmail.val59000mc.players.PlayerState;
 import com.gmail.val59000mc.players.PlayerManager;
+import com.gmail.val59000mc.players.TeamManager;
 import com.gmail.val59000mc.players.UhcPlayer;
 import com.gmail.val59000mc.players.UhcTeam;
 import com.gmail.val59000mc.tasks.PreStartTask;
+import com.gmail.val59000mc.utils.TimeUtils;
 
 import java.util.logging.Logger;
 
@@ -56,6 +60,22 @@ public class UhcCommandExecutor implements CommandExecutor{
 				return true;
 			}
 			return handleReviveSubCommand(sender, args);
+		}
+
+		if (args.length >= 1 && args[0].equalsIgnoreCase("latescatter")){
+			if (!sender.hasPermission("uhc-core.commands.latescatter")){
+				sender.sendMessage(ChatColor.RED + "You don't have permission to late scatter players.");
+				return true;
+			}
+			return handleLateScatterSubCommand(sender, args);
+		}
+
+		if (args.length >= 1 && args[0].equalsIgnoreCase("timer")){
+			if (!sender.hasPermission("uhc-core.commands.timer")){
+				sender.sendMessage(ChatColor.RED + "You don't have permission to modify the game timer.");
+				return true;
+			}
+			return handleTimerSubCommand(sender, args);
 		}
 
 		// debug commands
@@ -212,6 +232,148 @@ public class UhcCommandExecutor implements CommandExecutor{
 			sender.sendMessage(ChatColor.GREEN + targetUhcPlayer.getName() + " can now join the game!");
 		}
 		return true;
+	}
+
+	private boolean handleLateScatterSubCommand(CommandSender sender, String[] args) {
+		if (gameManager.getGameState() != GameState.PLAYING && gameManager.getGameState() != GameState.DEATHMATCH) {
+			sender.sendMessage(ChatColor.RED + "You can only use this command while playing!");
+			return true;
+		}
+
+		if (args.length < 2) {
+			sender.sendMessage(ChatColor.RED + "Usage: /uhc latescatter <player> [team]");
+			return true;
+		}
+
+		String targetName = args[1];
+		PlayerManager pm = gameManager.getPlayerManager();
+		TeamManager tm = gameManager.getTeamManager();
+		UhcPlayer targetUhcPlayer = null;
+		for (UhcPlayer up : pm.getPlayersList()) {
+			if (up.getName().equalsIgnoreCase(targetName) || up.getRealName().equalsIgnoreCase(targetName)) {
+				targetUhcPlayer = up;
+				break;
+			}
+		}
+
+		if (targetUhcPlayer == null) {
+			sender.sendMessage(ChatColor.RED + "Player " + targetName + " not found!");
+			return true;
+		}
+
+		Player onlinePlayer;
+		try {
+			onlinePlayer = targetUhcPlayer.getPlayer();
+		} catch (UhcPlayerNotOnlineException e) {
+			sender.sendMessage(ChatColor.RED + "Player " + targetUhcPlayer.getName() + " must be online to be late-scattered!");
+			return true;
+		}
+
+		if (targetUhcPlayer.getState() == PlayerState.PLAYING) {
+			sender.sendMessage(ChatColor.RED + "Player " + targetUhcPlayer.getName() + " is already playing!");
+			return true;
+		}
+
+		if (args.length >= 3) {
+			String teamQuery = args[2];
+			UhcTeam targetTeam = tm.getTeamByName(teamQuery);
+			if (targetTeam == null) {
+				for (UhcTeam team : tm.getUhcTeams()) {
+					if (String.valueOf(team.getTeamNumber()).equalsIgnoreCase(teamQuery) || team.getTeamName().equalsIgnoreCase(teamQuery)) {
+						targetTeam = team;
+						break;
+					}
+				}
+			}
+
+			if (targetTeam != null) {
+				try {
+					targetTeam.join(targetUhcPlayer);
+				} catch (UhcTeamException e) {
+					sender.sendMessage(ChatColor.RED + "Failed to join team: " + e.getMessage());
+					return true;
+				}
+			} else {
+				sender.sendMessage(ChatColor.RED + "Team " + teamQuery + " not found!");
+				return true;
+			}
+		} else {
+			if (targetUhcPlayer.getTeam() == null) {
+				if (gameManager.getConfig().get(MainConfig.AUTO_ASSIGN_PLAYER_TO_TEAM)) {
+					pm.autoAssignPlayerToTeam(targetUhcPlayer);
+				}
+			}
+		}
+
+		pm.lateScatterPlayer(targetUhcPlayer);
+		sender.sendMessage(ChatColor.GREEN + targetUhcPlayer.getName() + " has been late scattered into the game!");
+		onlinePlayer.sendMessage(ChatColor.GREEN + "You have been scattered into the game!");
+		return true;
+	}
+
+	private boolean handleTimerSubCommand(CommandSender sender, String[] args) {
+		if (gameManager.getGameState() != GameState.PLAYING && gameManager.getGameState() != GameState.DEATHMATCH) {
+			sender.sendMessage(ChatColor.RED + "You can only use this command while playing!");
+			return true;
+		}
+
+		if (args.length < 2) {
+			sender.sendMessage(ChatColor.RED + "Usage: /uhc timer <set|add|pause> [seconds]");
+			return true;
+		}
+
+		String sub = args[1].toLowerCase();
+		switch (sub) {
+			case "pause": {
+				boolean paused = gameManager.toggleTimerPause();
+				if (paused) {
+					gameManager.broadcastInfoMessage(ChatColor.GOLD + "The game timer has been paused by an administrator.");
+					sender.sendMessage(ChatColor.GREEN + "Timer paused.");
+				} else {
+					gameManager.broadcastInfoMessage(ChatColor.GOLD + "The game timer has been resumed.");
+					sender.sendMessage(ChatColor.GREEN + "Timer resumed.");
+				}
+				return true;
+			}
+			case "set": {
+				if (args.length < 3) {
+					sender.sendMessage(ChatColor.RED + "Usage: /uhc timer set <seconds>");
+					return true;
+				}
+				long seconds;
+				try {
+					seconds = Long.parseLong(args[2]);
+				} catch (NumberFormatException e) {
+					sender.sendMessage(ChatColor.RED + "Invalid number of seconds: " + args[2]);
+					return true;
+				}
+				gameManager.setTimer(seconds);
+				gameManager.broadcastInfoMessage(ChatColor.GOLD + "Game timer set to " + TimeUtils.getFormattedTime(seconds) + " by an administrator.");
+				sender.sendMessage(ChatColor.GREEN + "Timer set to " + seconds + "s (" + TimeUtils.getFormattedTime(seconds) + ").");
+				return true;
+			}
+			case "add": {
+				if (args.length < 3) {
+					sender.sendMessage(ChatColor.RED + "Usage: /uhc timer add <seconds>");
+					return true;
+				}
+				long seconds;
+				try {
+					seconds = Long.parseLong(args[2]);
+				} catch (NumberFormatException e) {
+					sender.sendMessage(ChatColor.RED + "Invalid number of seconds: " + args[2]);
+					return true;
+				}
+				gameManager.adjustTimer(seconds);
+				long current = gameManager.getElapsedTime();
+				gameManager.broadcastInfoMessage(ChatColor.GOLD + "Game timer adjusted by " + (seconds >= 0 ? "+" : "") + seconds + "s by an administrator.");
+				sender.sendMessage(ChatColor.GREEN + "Timer adjusted by " + seconds + "s. Current time: " + TimeUtils.getFormattedTime(current));
+				return true;
+			}
+			default:
+				sender.sendMessage(ChatColor.RED + "Usage: /uhc timer <set|add|pause> [seconds]");
+				return true;
+		}
 	}
 
 }
