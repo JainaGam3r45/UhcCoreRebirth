@@ -85,16 +85,9 @@ public class ModernVersionUtils extends VersionUtils {
 		return attribute;
 	}
 
-	/**
-	 * Max health lives at "max_health" on 1.21.2+ and at "generic.max_health" on 1.21.0/1.21.1.
-	 */
 	@Nullable
 	public static Attribute findMaxHealthAttribute() {
-		Attribute attribute = findAttribute(NamespacedKey.minecraft("max_health"));
-		if (attribute == null) {
-			attribute = findAttribute(NamespacedKey.minecraft("generic.max_health"));
-		}
-		return attribute;
+		return findAttribute(NamespacedKey.minecraft("generic.max_health"));
 	}
 
 	// Mirrors what OldEnum#name() hands out, so kit files written before this change still parse.
