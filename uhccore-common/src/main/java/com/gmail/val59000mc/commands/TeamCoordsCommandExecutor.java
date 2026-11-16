@@ -58,6 +58,13 @@ public class TeamCoordsCommandExecutor implements CommandExecutor{
 			return true;
 		}
 
+		// The sender is in this list too, so 1 means everyone else is dead or logged off and
+		// the coords would only reach spectators.
+		if (team.getOnlinePlayingMembers().size() <= 1){
+			player.sendMessage(Lang.COMMAND_TEAMCOORDS_ERROR_NO_TEAMMATES);
+			return true;
+		}
+
 		long now = System.currentTimeMillis();
 		Long last = lastShared.get(player.getUniqueId());
 

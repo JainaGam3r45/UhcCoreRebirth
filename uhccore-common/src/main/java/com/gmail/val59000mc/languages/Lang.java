@@ -89,6 +89,7 @@ public class Lang{
 	public static String COMMAND_TEAMCOORDS_ERROR_GAME;
 	public static String COMMAND_TEAMCOORDS_ERROR_PLAYING;
 	public static String COMMAND_TEAMCOORDS_ERROR_SOLO;
+	public static String COMMAND_TEAMCOORDS_ERROR_NO_TEAMMATES;
 	public static String COMMAND_TEAMCOORDS_COOLDOWN;
 	public static String COMMAND_TEAMCOORDS_WORLD_OVERWORLD;
 	public static String COMMAND_TEAMCOORDS_WORLD_NETHER;
@@ -331,6 +332,7 @@ public class Lang{
 		COMMAND_TEAMCOORDS_ERROR_GAME = getString(lang, "command.teamcoords.error-game", "&cYou can only share your coordinates once the game has started.");
 		COMMAND_TEAMCOORDS_ERROR_PLAYING = getString(lang, "command.teamcoords.error-playing", "&cYou can only share your coordinates while you are alive.");
 		COMMAND_TEAMCOORDS_ERROR_SOLO = getString(lang, "command.teamcoords.error-solo", "&cYou have no teammates to share your coordinates with.");
+		COMMAND_TEAMCOORDS_ERROR_NO_TEAMMATES = getString(lang, "command.teamcoords.error-no-teammates", "&cNone of your teammates are alive and online to get your coordinates.");
 		COMMAND_TEAMCOORDS_COOLDOWN = getString(lang, "command.teamcoords.cooldown", "&cWait %seconds%s before sharing your coordinates again.");
 		COMMAND_TEAMCOORDS_WORLD_OVERWORLD = getString(lang, "command.teamcoords.world-overworld", "Overworld");
 		COMMAND_TEAMCOORDS_WORLD_NETHER = getString(lang, "command.teamcoords.world-nether", "Nether");
