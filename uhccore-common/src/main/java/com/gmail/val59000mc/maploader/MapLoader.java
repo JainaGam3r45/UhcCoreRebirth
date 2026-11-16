@@ -408,6 +408,14 @@ public class MapLoader {
 	}
 
 	private void setGameRuleIfAvailable(World world, String gameRuleName, Object value) {
+		// GameRule is 1.13+, so on 1.12 and older touching it throws NoClassDefFoundError
+		// and the rule got silently skipped. Those versions only speak the string API.
+		if (!VersionUtils.isAtLeast(13)) {
+			if (world.isGameRule(gameRuleName)) {
+				VersionUtils.getVersionUtils().setGameRuleValue(world, gameRuleName, value);
+			}
+			return;
+		}
 		try {
 			GameRule<?> rule = GameRule.getByName(gameRuleName);
 			if (rule != null) {
