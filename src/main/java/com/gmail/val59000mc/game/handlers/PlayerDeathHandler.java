@@ -22,6 +22,7 @@ import com.gmail.val59000mc.customitems.UhcItems;
 import com.gmail.val59000mc.events.UhcPlayerKillEvent;
 import com.gmail.val59000mc.game.GameManager;
 import com.gmail.val59000mc.languages.Lang;
+import com.gmail.val59000mc.players.DeathSnapshot;
 import com.gmail.val59000mc.players.PlayerManager;
 import com.gmail.val59000mc.players.PlayerState;
 import com.gmail.val59000mc.players.UhcPlayer;
@@ -59,6 +60,8 @@ public class PlayerDeathHandler {
 	public void handleOnlinePlayerDeath(PlayerDeathEvent event) {
 		Player player = event.getEntity();
 		UhcPlayer uhcPlayer = playerManager.getUhcPlayer(player);
+
+		DeathSnapshot.record(player, uhcPlayer);
 
 		List<ItemStack> modifiedDrops = handlePlayerDeath(uhcPlayer, player.getLocation(), new ArrayList<>(event.getDrops()), player.getKiller());
 

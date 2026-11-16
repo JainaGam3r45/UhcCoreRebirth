@@ -19,7 +19,7 @@ team_inventory:
   drop-on-team-elimination: false
 no_clean:
   # Time players are invulnerable for.
-  duration: 30
+  duration: 20
 sky_high:
   # Time before first damage.
   time-before-start: 1800

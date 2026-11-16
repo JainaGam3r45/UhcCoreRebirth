@@ -1,6 +1,7 @@
 package com.gmail.val59000mc.commands;
 
 import com.gmail.val59000mc.UhcCore;
+import com.gmail.val59000mc.exceptions.UhcPlayerNotOnlineException;
 import com.gmail.val59000mc.game.GameManager;
 import com.gmail.val59000mc.game.GameState;
 import com.gmail.val59000mc.players.PlayerState;
@@ -47,6 +48,14 @@ public class UhcCommandExecutor implements CommandExecutor{
 			gameManager.loadConfig();
 			sender.sendMessage(ChatColor.GREEN + "config.yml, lang.yml and scoreboard.yml have been reloaded");
 			return true;
+		}
+
+		if (args.length >= 2 && args[0].equalsIgnoreCase("revive")){
+			if (!sender.hasPermission("uhc-core.commands.revive")){
+				sender.sendMessage(ChatColor.RED + "You don't have permission to revive players.");
+				return true;
+			}
+			return handleReviveSubCommand(sender, args);
 		}
 
 		// debug commands
@@ -163,6 +172,46 @@ public class UhcCommandExecutor implements CommandExecutor{
 			}
 			sender.sendMessage(str.toString());
 		}
+	}
+
+	private boolean handleReviveSubCommand(CommandSender sender, String[] args) {
+		if (gameManager.getGameState() != GameState.PLAYING && gameManager.getGameState() != GameState.DEATHMATCH) {
+			sender.sendMessage(ChatColor.RED + "You can only use this command while playing!");
+			return true;
+		}
+
+		String targetName = args[1];
+		boolean spawnWithItems = args.length < 3 || !args[2].equalsIgnoreCase("clear");
+
+		PlayerManager pm = gameManager.getPlayerManager();
+		UhcPlayer targetUhcPlayer = null;
+		for (UhcPlayer up : pm.getPlayersList()) {
+			if (up.getName().equalsIgnoreCase(targetName) || up.getRealName().equalsIgnoreCase(targetName)) {
+				targetUhcPlayer = up;
+				break;
+			}
+		}
+
+		if (targetUhcPlayer == null) {
+			sender.sendMessage(ChatColor.RED + "Player " + targetName + " not found!");
+			return true;
+		}
+
+		if (!targetUhcPlayer.isDead()) {
+			sender.sendMessage(ChatColor.RED + "Player " + targetName + " is not dead!");
+			return true;
+		}
+
+		pm.revivePlayer(targetUhcPlayer, spawnWithItems);
+
+		try {
+			Player onlinePlayer = targetUhcPlayer.getPlayer();
+			onlinePlayer.sendMessage(ChatColor.GREEN + "You have been revived by an administrator!");
+			sender.sendMessage(ChatColor.GREEN + targetUhcPlayer.getName() + " has been revived!");
+		} catch (UhcPlayerNotOnlineException e) {
+			sender.sendMessage(ChatColor.GREEN + targetUhcPlayer.getName() + " can now join the game!");
+		}
+		return true;
 	}
 
 }

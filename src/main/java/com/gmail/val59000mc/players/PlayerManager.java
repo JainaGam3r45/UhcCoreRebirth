@@ -242,7 +242,10 @@ public class PlayerManager {
 					uhcPlayer.setHasBeenTeleportedToLocation(true);
 
 					// Restore inventory if revived
-					if (!uhcPlayer.getStoredItems().isEmpty()) {
+					Optional<DeathSnapshot> deathSnapshot = DeathSnapshot.get(uhcPlayer.getUuid());
+					if (deathSnapshot.isPresent()) {
+						deathSnapshot.get().restore(player);
+					} else if (!uhcPlayer.getStoredItems().isEmpty()) {
 						uhcPlayer.getStoredItems().forEach(item -> player.getWorld().dropItem(player.getLocation(), item.reanimate()));
 						uhcPlayer.getStoredItems().clear();
 					}
@@ -668,13 +671,21 @@ public class PlayerManager {
 		uhcPlayer.setHasBeenTeleportedToLocation(false);
 		uhcPlayer.setState(PlayerState.PLAYING);
 
-		// If not respawn with items, clear stored items.
+		// If not respawn with items, clear stored items and snapshot.
 		if (!spawnWithItems){
 			uhcPlayer.getStoredItems().clear();
+			DeathSnapshot.remove(uhcPlayer.getUuid());
 		}
 
 		try{
-			playerJoinsTheGame(uhcPlayer.getPlayer());
+			Player player = uhcPlayer.getPlayer();
+			if (spawnWithItems) {
+				Optional<DeathSnapshot> snapshot = DeathSnapshot.get(uhcPlayer.getUuid());
+				if (snapshot.isPresent()) {
+					snapshot.get().restore(player);
+				}
+			}
+			playerJoinsTheGame(player);
 		} catch (UhcPlayerNotOnlineException ignored) {
 			// Player gets revived next time they attempt to join.
 			// We need to support reviving offline players, because they might not be permitted
