@@ -12,6 +12,8 @@ import com.gmail.val59000mc.tasks.UpdateScoreboardTask;
 import com.gmail.val59000mc.utils.VersionUtils;
 import com.gmail.val59000mc.versionadapters.adapters.SetTeamColorAdapter;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.util.logging.Logger;
 
 import org.bukkit.Bukkit;
@@ -187,13 +189,89 @@ public class ScoreboardHandler {
 	}
 
 	// Workaround for https://bugs.mojang.com/browse/MC-111729
+	// On 1.20.3+, vanilla made HEALTH criteria strictly read-only (MC-163943), causing score.setScore()
+	// to throw an IllegalStateException. We punch through to NMS Scoreboard via reflection to force the initial value.
 	private void setReadOnlyPlayerScore(Score score, int value) {
-		if (UhcCore.getNmsAdapter().isPresent()) {
-			// On Minecraft 1.20.3+, we need to use NMS
-			UhcCore.getNmsAdapter().get().setReadOnlyPlayerScore(score, value);
-		} else {
-			// Works on Minecraft 1.20.2 and below, before the fix of https://bugs.mojang.com/browse/MC-163943.
+		try {
 			score.setScore(value);
+		} catch (IllegalStateException e) {
+			try {
+				Object craftScoreboard = score.getScoreboard();
+				Method getHandleScoreboard = craftScoreboard.getClass().getMethod("getHandle");
+				Object nmsScoreboard = getHandleScoreboard.invoke(craftScoreboard);
+
+				Object craftObjective = score.getObjective();
+				Method getHandleObjective = craftObjective.getClass().getMethod("getHandle");
+				Object nmsObjective = getHandleObjective.invoke(craftObjective);
+
+				Method getOrCreateScore = null;
+				for (Method m : nmsScoreboard.getClass().getMethods()) {
+					Class<?>[] params = m.getParameterTypes();
+					if (params.length == 3 && params[2] == boolean.class && params[1].isAssignableFrom(nmsObjective.getClass())) {
+						getOrCreateScore = m;
+						break;
+					}
+				}
+				if (getOrCreateScore == null) {
+					for (Method m : nmsScoreboard.getClass().getDeclaredMethods()) {
+						Class<?>[] params = m.getParameterTypes();
+						if (params.length == 3 && params[2] == boolean.class && params[1].isAssignableFrom(nmsObjective.getClass())) {
+							m.setAccessible(true);
+							getOrCreateScore = m;
+							break;
+						}
+					}
+				}
+
+				if (getOrCreateScore != null) {
+					Class<?> holderParam = getOrCreateScore.getParameterTypes()[0];
+					Object holder;
+					if (holderParam == String.class) {
+						holder = score.getEntry();
+					} else {
+						holder = Proxy.newProxyInstance(
+								holderParam.getClassLoader(),
+								new Class<?>[]{holderParam},
+								(proxy, method, args) -> {
+									if (method.getReturnType() == String.class) {
+										return score.getEntry();
+									}
+									if ("equals".equals(method.getName()) && args != null && args.length == 1) {
+										return proxy == args[0];
+									}
+									if ("hashCode".equals(method.getName())) {
+										return score.getEntry().hashCode();
+									}
+									if ("toString".equals(method.getName())) {
+										return score.getEntry();
+									}
+									return null;
+								}
+						);
+					}
+
+					Object scoreAccess = getOrCreateScore.invoke(nmsScoreboard, holder, nmsObjective, true);
+					boolean scoreSet = false;
+					for (Method m : scoreAccess.getClass().getMethods()) {
+						if (m.getReturnType() == void.class && m.getParameterCount() == 1 && m.getParameterTypes()[0] == int.class) {
+							m.invoke(scoreAccess, value);
+							scoreSet = true;
+							break;
+						}
+					}
+					if (!scoreSet) {
+						for (Method m : scoreAccess.getClass().getDeclaredMethods()) {
+							if (m.getReturnType() == void.class && m.getParameterCount() == 1 && m.getParameterTypes()[0] == int.class) {
+								m.setAccessible(true);
+								m.invoke(scoreAccess, value);
+								break;
+							}
+						}
+					}
+				}
+			} catch (Exception ignored) {
+				// Silently fail if server internals diverge; health display will self-heal once the player takes damage.
+			}
 		}
 	}
 
