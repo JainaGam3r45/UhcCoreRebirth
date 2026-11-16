@@ -58,6 +58,10 @@ public enum UniversalMaterial {
 	BLACK_STAINED_GLASS_PANE("STAINED_GLASS_PANE", 15, DataValueMask.EXCLUDE_NONE, "BLACK_STAINED_GLASS_PANE"),
 
 	IRON_INGOT,
+	IRON_BLOCK,
+	IRON_ORE,
+	RAW_IRON,
+	RAW_IRON_BLOCK,
 	LAVA_BUCKET,
 	BOW,
 	FISHING_ROD,
@@ -65,6 +69,7 @@ public enum UniversalMaterial {
 	DIAMOND,
 	DIAMOND_ORE,
 	EMERALD,
+	EMERALD_ORE,
 	SADDLE,
 	TRAPPED_CHEST,
 	FEATHER,
@@ -75,13 +80,19 @@ public enum UniversalMaterial {
 	QUARTZ,
 	BOOK,
 	GOLD_INGOT,
+	GOLD_BLOCK,
 	GOLD_ORE,
+	RAW_GOLD,
+	RAW_GOLD_BLOCK,
 	ARROW,
 	COPPER_INGOT,
+	COPPER_BLOCK,
+	COPPER_ORE,
+	RAW_COPPER,
+	RAW_COPPER_BLOCK,
 	NETHERITE_SCRAP,
 	COAL,
 	COAL_ORE,
-	COPPER_ORE,
 	NETHER_GOLD_ORE,
 	ANCIENT_DEBRIS,
 	DEEPSLATE_COAL_ORE,
@@ -94,6 +105,7 @@ public enum UniversalMaterial {
 	DEEPSLATE_DIAMOND_ORE,
 	GLOWING_REDSTONE_ORE("GLOWING_REDSTONE_ORE", "REDSTONE_ORE"),
 	NETHER_QUARTZ_ORE("QUARTZ_ORE", "NETHER_QUARTZ_ORE"),
+	LAPIS_ORE,
 	LAPIS_LAZULI("INK_SACK", 4, DataValueMask.EXCLUDE_NONE, "LAPIS_LAZULI"),
 	RED_DYE("INK_SACK", 1, DataValueMask.EXCLUDE_NONE, "RED_DYE"),
 	DRAGON_EGG,
@@ -248,6 +260,22 @@ public enum UniversalMaterial {
 
 	TRIDENT,
 	MACE,
+	HEAVY_CORE,
+	BREEZE_ROD,
+	WIND_CHARGE,
+
+	// Trial Chambers & Crafter (1.21)
+	TRIAL_SPAWNER,
+	VAULT,
+	// Mojang handles ominous spawners/vaults via block state (TrialSpawner#isOminous)
+	// rather than dedicated Material enums. Map them back to the base blocks so getType()
+	// doesn't return null if callers check material type directly.
+	OMINOUS_TRIAL_SPAWNER("TRIAL_SPAWNER", "TRIAL_SPAWNER"),
+	OMINOUS_VAULT("VAULT", "VAULT"),
+	OMINOUS_BOTTLE,
+	TRIAL_KEY,
+	OMINOUS_TRIAL_KEY,
+	CRAFTER,
 
 	OAK_LEAVES("LEAVES", 0, DataValueMask.EXCLUDE_LEAVES_DECAY_BITS, "OAK_LEAVES"),
 	SPRUCE_LEAVES("LEAVES", 1, DataValueMask.EXCLUDE_LEAVES_DECAY_BITS, "SPRUCE_LEAVES"),
@@ -279,6 +307,36 @@ public enum UniversalMaterial {
 	STRIPPED_MANGROVE_LOG,
 	STRIPPED_CHERRY_LOG,
 	STRIPPED_PALE_OAK_LOG,
+	CRIMSON_STEM,
+	WARPED_STEM,
+	STRIPPED_CRIMSON_STEM,
+	STRIPPED_WARPED_STEM,
+	BAMBOO_BLOCK,
+	STRIPPED_BAMBOO_BLOCK,
+
+	// 6-sided bark wood blocks
+	OAK_WOOD,
+	STRIPPED_OAK_WOOD,
+	SPRUCE_WOOD,
+	STRIPPED_SPRUCE_WOOD,
+	BIRCH_WOOD,
+	STRIPPED_BIRCH_WOOD,
+	JUNGLE_WOOD,
+	STRIPPED_JUNGLE_WOOD,
+	ACACIA_WOOD,
+	STRIPPED_ACACIA_WOOD,
+	DARK_OAK_WOOD,
+	STRIPPED_DARK_OAK_WOOD,
+	MANGROVE_WOOD,
+	STRIPPED_MANGROVE_WOOD,
+	CHERRY_WOOD,
+	STRIPPED_CHERRY_WOOD,
+	PALE_OAK_WOOD,
+	STRIPPED_PALE_OAK_WOOD,
+	CRIMSON_HYPHAE,
+	STRIPPED_CRIMSON_HYPHAE,
+	WARPED_HYPHAE,
+	STRIPPED_WARPED_HYPHAE,
 
 	COOKED_BEEF("COOKED_BEEF", "COOKED_BEEF"),
 	COOKED_CHICKEN("COOKED_CHICKEN", "COOKED_CHICKEN"),
@@ -298,6 +356,70 @@ public enum UniversalMaterial {
 	JUNGLE_PLANKS("WOOD", 3, DataValueMask.EXCLUDE_NONE, "JUNGLE_PLANKS"),
 	ACACIA_PLANKS("WOOD", 4, DataValueMask.EXCLUDE_NONE, "ACACIA_PLANKS"),
 	DARK_OAK_PLANKS("WOOD", 5, DataValueMask.EXCLUDE_NONE, "DARK_OAK_PLANKS"),
+	MANGROVE_PLANKS,
+	CHERRY_PLANKS,
+	BAMBOO_PLANKS,
+	CRIMSON_PLANKS,
+	WARPED_PLANKS,
+	PALE_OAK_PLANKS,
+
+	// Pale Garden (1.21.4)
+	PALE_OAK_SAPLING,
+	CREAKING_HEART,
+	RESIN_CLUMP,
+	RESIN_BLOCK,
+	RESIN_BRICKS,
+	RESIN_BRICK,
+	CHISELED_RESIN_BRICKS,
+	PALE_HANGING_MOSS,
+	PALE_MOSS_BLOCK,
+	PALE_MOSS_CARPET,
+
+	// Copper blocks (doors, trapdoors, grates, bulbs, chiseled)
+	COPPER_DOOR,
+	EXPOSED_COPPER_DOOR,
+	WEATHERED_COPPER_DOOR,
+	OXIDIZED_COPPER_DOOR,
+	WAXED_COPPER_DOOR,
+	WAXED_EXPOSED_COPPER_DOOR,
+	WAXED_WEATHERED_COPPER_DOOR,
+	WAXED_OXIDIZED_COPPER_DOOR,
+
+	COPPER_TRAPDOOR,
+	EXPOSED_COPPER_TRAPDOOR,
+	WEATHERED_COPPER_TRAPDOOR,
+	OXIDIZED_COPPER_TRAPDOOR,
+	WAXED_COPPER_TRAPDOOR,
+	WAXED_EXPOSED_COPPER_TRAPDOOR,
+	WAXED_WEATHERED_COPPER_TRAPDOOR,
+	WAXED_OXIDIZED_COPPER_TRAPDOOR,
+
+	COPPER_GRATE,
+	EXPOSED_COPPER_GRATE,
+	WEATHERED_COPPER_GRATE,
+	OXIDIZED_COPPER_GRATE,
+	WAXED_COPPER_GRATE,
+	WAXED_EXPOSED_COPPER_GRATE,
+	WAXED_WEATHERED_COPPER_GRATE,
+	WAXED_OXIDIZED_COPPER_GRATE,
+
+	COPPER_BULB,
+	EXPOSED_COPPER_BULB,
+	WEATHERED_COPPER_BULB,
+	OXIDIZED_COPPER_BULB,
+	WAXED_COPPER_BULB,
+	WAXED_EXPOSED_COPPER_BULB,
+	WAXED_WEATHERED_COPPER_BULB,
+	WAXED_OXIDIZED_COPPER_BULB,
+
+	CHISELED_COPPER,
+	EXPOSED_CHISELED_COPPER,
+	WEATHERED_CHISELED_COPPER,
+	OXIDIZED_CHISELED_COPPER,
+	WAXED_CHISELED_COPPER,
+	WAXED_EXPOSED_CHISELED_COPPER,
+	WAXED_WEATHERED_CHISELED_COPPER,
+	WAXED_OXIDIZED_CHISELED_COPPER,
 
 	STONE("STONE", 0, DataValueMask.EXCLUDE_NONE, "STONE"),
 	GRANITE("STONE", 1, DataValueMask.EXCLUDE_NONE, "GRANITE"),
@@ -312,6 +434,7 @@ public enum UniversalMaterial {
 	private final String name13;
 
 	private Material material;
+	private boolean resolved;
 
 	UniversalMaterial(String name8, Integer dataValue8, Integer dataValueMask8, String name13) {
 		this.name8 = name8;
@@ -352,12 +475,24 @@ public enum UniversalMaterial {
 	 */
 	@Deprecated
 	public Material getType() {
-		if (material == null) {
+		if (!resolved) {
+			resolved = true;
 			try {
-				if (PaperLib.getMinecraftVersion() > 12) material = Material.valueOf(name13);
-				else material = Material.valueOf(name8);
-			} catch (IllegalArgumentException ignored) {
-
+				// Use matchMaterial defensively so running on 1.8-1.12 fossils won't throw
+				// unhandled IllegalArgumentExceptions when modern blocks are checked.
+				if (PaperLib.getMinecraftVersion() > 12) {
+					material = Material.matchMaterial(name13);
+					if (material == null && name8 != null) {
+						material = Material.matchMaterial(name8);
+					}
+				} else {
+					material = Material.matchMaterial(name8);
+					if (material == null && name13 != null) {
+						material = Material.matchMaterial(name13);
+					}
+				}
+			} catch (Exception ignored) {
+				// Prevent classloader / version detection edge cases on obscure forks
 			}
 		}
 
@@ -429,16 +564,19 @@ public enum UniversalMaterial {
 	private static final Map<Material, Integer> miningToolDamage = buildMiningToolDamage();
 
 	public static int getMiningToolDamage(Material item) {
-		// For now, we only provide reasonable defaults, which don't fully
-		// reflect the vanilla behavior on all Minecraft versions.
-		// For example, we ignore the fact that some tools only take damage
-		// when mining a specific type of block, and that tools usually don't
-		// take damage when mining a block with 0 hardness.
+		if (item == null) {
+			return 0;
+		}
+		// Vanilla tools take 1 durability damage on breakable blocks, weapons/swords take 2
 		return miningToolDamage.getOrDefault(item, 0);
 	}
 
 	public static boolean isLog(Material material) {
-		// Should probably use .matches on a Block, but actually this is fine for now
+		if (material == null) {
+			return false;
+		}
+
+		// Covers all vanilla logs, nether stems, and bamboo blocks across versions
 		return material == UniversalMaterial.OAK_LOG.getType()
 			|| material == UniversalMaterial.SPRUCE_LOG.getType()
 			|| material == UniversalMaterial.BIRCH_LOG.getType()
@@ -448,6 +586,9 @@ public enum UniversalMaterial {
 			|| material == UniversalMaterial.MANGROVE_LOG.getType()
 			|| material == UniversalMaterial.CHERRY_LOG.getType()
 			|| material == UniversalMaterial.PALE_OAK_LOG.getType()
+			|| material == UniversalMaterial.CRIMSON_STEM.getType()
+			|| material == UniversalMaterial.WARPED_STEM.getType()
+			|| material == UniversalMaterial.BAMBOO_BLOCK.getType()
 			|| material == UniversalMaterial.STRIPPED_OAK_LOG.getType()
 			|| material == UniversalMaterial.STRIPPED_SPRUCE_LOG.getType()
 			|| material == UniversalMaterial.STRIPPED_BIRCH_LOG.getType()
@@ -456,11 +597,47 @@ public enum UniversalMaterial {
 			|| material == UniversalMaterial.STRIPPED_DARK_OAK_LOG.getType()
 			|| material == UniversalMaterial.STRIPPED_MANGROVE_LOG.getType()
 			|| material == UniversalMaterial.STRIPPED_CHERRY_LOG.getType()
-			|| material == UniversalMaterial.STRIPPED_PALE_OAK_LOG.getType();
+			|| material == UniversalMaterial.STRIPPED_PALE_OAK_LOG.getType()
+			|| material == UniversalMaterial.STRIPPED_CRIMSON_STEM.getType()
+			|| material == UniversalMaterial.STRIPPED_WARPED_STEM.getType()
+			|| material == UniversalMaterial.STRIPPED_BAMBOO_BLOCK.getType();
+	}
+
+	public static boolean isWood(Material material) {
+		if (material == null) {
+			return false;
+		}
+
+		// Covers 6-sided bark wood blocks and hyphae variants introduced in 1.13+
+		return material == UniversalMaterial.OAK_WOOD.getType()
+			|| material == UniversalMaterial.SPRUCE_WOOD.getType()
+			|| material == UniversalMaterial.BIRCH_WOOD.getType()
+			|| material == UniversalMaterial.JUNGLE_WOOD.getType()
+			|| material == UniversalMaterial.ACACIA_WOOD.getType()
+			|| material == UniversalMaterial.DARK_OAK_WOOD.getType()
+			|| material == UniversalMaterial.MANGROVE_WOOD.getType()
+			|| material == UniversalMaterial.CHERRY_WOOD.getType()
+			|| material == UniversalMaterial.PALE_OAK_WOOD.getType()
+			|| material == UniversalMaterial.CRIMSON_HYPHAE.getType()
+			|| material == UniversalMaterial.WARPED_HYPHAE.getType()
+			|| material == UniversalMaterial.STRIPPED_OAK_WOOD.getType()
+			|| material == UniversalMaterial.STRIPPED_SPRUCE_WOOD.getType()
+			|| material == UniversalMaterial.STRIPPED_BIRCH_WOOD.getType()
+			|| material == UniversalMaterial.STRIPPED_JUNGLE_WOOD.getType()
+			|| material == UniversalMaterial.STRIPPED_ACACIA_WOOD.getType()
+			|| material == UniversalMaterial.STRIPPED_DARK_OAK_WOOD.getType()
+			|| material == UniversalMaterial.STRIPPED_MANGROVE_WOOD.getType()
+			|| material == UniversalMaterial.STRIPPED_CHERRY_WOOD.getType()
+			|| material == UniversalMaterial.STRIPPED_PALE_OAK_WOOD.getType()
+			|| material == UniversalMaterial.STRIPPED_CRIMSON_HYPHAE.getType()
+			|| material == UniversalMaterial.STRIPPED_WARPED_HYPHAE.getType();
 	}
 
 	public static boolean isLeaves(Material material) {
-		// Should probably use .matches on a Block, but actually this is fine for now
+		if (material == null) {
+			return false;
+		}
+
 		return material == UniversalMaterial.OAK_LEAVES.getType()
 			|| material == UniversalMaterial.SPRUCE_LEAVES.getType()
 			|| material == UniversalMaterial.BIRCH_LEAVES.getType()
@@ -475,10 +652,44 @@ public enum UniversalMaterial {
 	}
 
 	public static boolean isAppleLeaves(Block block) {
+		if (block == null) {
+			return false;
+		}
 		return UniversalMaterial.OAK_LEAVES.matches(block) || UniversalMaterial.DARK_OAK_LEAVES.matches(block);
 	}
 
+	public static boolean isOre(Material material) {
+		if (material == null) {
+			return false;
+		}
+
+		// Covers all normal, deepslate, and nether ore variants across supported versions
+		return material == UniversalMaterial.COAL_ORE.getType()
+			|| material == UniversalMaterial.DEEPSLATE_COAL_ORE.getType()
+			|| material == UniversalMaterial.IRON_ORE.getType()
+			|| material == UniversalMaterial.DEEPSLATE_IRON_ORE.getType()
+			|| material == UniversalMaterial.COPPER_ORE.getType()
+			|| material == UniversalMaterial.DEEPSLATE_COPPER_ORE.getType()
+			|| material == UniversalMaterial.GOLD_ORE.getType()
+			|| material == UniversalMaterial.DEEPSLATE_GOLD_ORE.getType()
+			|| material == UniversalMaterial.NETHER_GOLD_ORE.getType()
+			|| material == UniversalMaterial.REDSTONE_ORE.getType()
+			|| material == UniversalMaterial.GLOWING_REDSTONE_ORE.getType()
+			|| material == UniversalMaterial.DEEPSLATE_REDSTONE_ORE.getType()
+			|| material == UniversalMaterial.LAPIS_ORE.getType()
+			|| material == UniversalMaterial.DEEPSLATE_LAPIS_ORE.getType()
+			|| material == UniversalMaterial.DIAMOND_ORE.getType()
+			|| material == UniversalMaterial.DEEPSLATE_DIAMOND_ORE.getType()
+			|| material == UniversalMaterial.EMERALD_ORE.getType()
+			|| material == UniversalMaterial.DEEPSLATE_EMERALD_ORE.getType()
+			|| material == UniversalMaterial.NETHER_QUARTZ_ORE.getType()
+			|| material == UniversalMaterial.ANCIENT_DEBRIS.getType();
+	}
+
 	public static boolean isFlowerOrDeadBush(Block block) {
+		if (block == null) {
+			return false;
+		}
 		return UniversalMaterial.POPPY.matches(block)
 			|| UniversalMaterial.BLUE_ORCHID.matches(block)
 			|| UniversalMaterial.ALLIUM.matches(block)
@@ -509,6 +720,9 @@ public enum UniversalMaterial {
 	}
 
 	public static boolean isOreReplaceableBlock(Block block) {
+		if (block == null) {
+			return false;
+		}
 		return UniversalMaterial.STONE.matches(block)
 			|| UniversalMaterial.GRANITE.matches(block)
 			|| UniversalMaterial.DIORITE.matches(block)
@@ -518,7 +732,9 @@ public enum UniversalMaterial {
 	}
 
 	public static boolean isAxe(Material tool) {
-		// Should probably use .matches on an ItemStack, but actually this is fine for now
+		if (tool == null) {
+			return false;
+		}
 		return tool == UniversalMaterial.WOODEN_AXE.getType()
 			|| tool == Material.STONE_AXE
 			|| tool == UniversalMaterial.COPPER_AXE.getType()
@@ -529,18 +745,32 @@ public enum UniversalMaterial {
 	}
 
 	public boolean matches(Block block) {
+		if (block == null) {
+			return false;
+		}
+		Material type = getType();
+		if (type == null) {
+			return false;
+		}
 		if (PaperLib.isVersion(13)) {
-			return block.getType() == getType();
+			return block.getType() == type;
 		} else {
-			return block.getType() == getType() && (block.getData() & dataValueMask8) == dataValue8;
+			return block.getType() == type && (block.getData() & dataValueMask8) == dataValue8;
 		}
 	}
 
 	public boolean matches(ItemStack itemStack) {
+		if (itemStack == null) {
+			return false;
+		}
+		Material type = getType();
+		if (type == null) {
+			return false;
+		}
 		if (PaperLib.isVersion(13)) {
-			return itemStack.getType() == getType();
+			return itemStack.getType() == type;
 		} else {
-			return itemStack.getType() == getType() && (itemStack.getDurability() & dataValueMask8) == dataValue8;
+			return itemStack.getType() == type && (itemStack.getDurability() & dataValueMask8) == dataValue8;
 		}
 	}
 
