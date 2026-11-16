@@ -85,6 +85,14 @@ public class Lang{
 	public static String COMMAND_SPECTATE_ERROR;
 	public static String COMMAND_SPECTATE_PLAYING;
 	public static String COMMAND_SPECTATE_SPECTATING;
+	public static String COMMAND_TEAMCOORDS_MESSAGE;
+	public static String COMMAND_TEAMCOORDS_ERROR_GAME;
+	public static String COMMAND_TEAMCOORDS_ERROR_PLAYING;
+	public static String COMMAND_TEAMCOORDS_ERROR_SOLO;
+	public static String COMMAND_TEAMCOORDS_COOLDOWN;
+	public static String COMMAND_TEAMCOORDS_WORLD_OVERWORLD;
+	public static String COMMAND_TEAMCOORDS_WORLD_NETHER;
+	public static String COMMAND_TEAMCOORDS_WORLD_END;
 
 	// Team Inventories
 	public static String TEAM_INVENTORY_MAIN;
@@ -319,6 +327,14 @@ public class Lang{
 		COMMAND_SPECTATE_ERROR = getString(lang, "command.spectate.error", "&cYou may only toggle to spectating mode while the game has not yet started.");
 		COMMAND_SPECTATE_PLAYING = getString(lang, "command.spectate.playing", "&aYou're now playing!");
 		COMMAND_SPECTATE_SPECTATING = getString(lang, "command.spectate.spectating", "&aYou're now spectating!");
+		COMMAND_TEAMCOORDS_MESSAGE = getString(lang, "command.teamcoords.message", "&a[Team] &r%player% &7is at &fX: %x% Y: %y% Z: %z% &7(%world%)");
+		COMMAND_TEAMCOORDS_ERROR_GAME = getString(lang, "command.teamcoords.error-game", "&cYou can only share your coordinates once the game has started.");
+		COMMAND_TEAMCOORDS_ERROR_PLAYING = getString(lang, "command.teamcoords.error-playing", "&cYou can only share your coordinates while you are alive.");
+		COMMAND_TEAMCOORDS_ERROR_SOLO = getString(lang, "command.teamcoords.error-solo", "&cYou have no teammates to share your coordinates with.");
+		COMMAND_TEAMCOORDS_COOLDOWN = getString(lang, "command.teamcoords.cooldown", "&cWait %seconds%s before sharing your coordinates again.");
+		COMMAND_TEAMCOORDS_WORLD_OVERWORLD = getString(lang, "command.teamcoords.world-overworld", "Overworld");
+		COMMAND_TEAMCOORDS_WORLD_NETHER = getString(lang, "command.teamcoords.world-nether", "Nether");
+		COMMAND_TEAMCOORDS_WORLD_END = getString(lang, "command.teamcoords.world-end", "The End");
 
 		// Team Inventories
 		TEAM_INVENTORY_MAIN = getString(lang, "team.inventory.main", "&2Team Menu", 32);

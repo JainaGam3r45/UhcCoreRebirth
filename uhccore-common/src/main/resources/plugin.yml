@@ -72,7 +72,15 @@ commands:
     description: "Heals a player to full health. If no player is specified, heals all players."
     usage: /<command> [player]
     permission: "uhc-core.commands.heal"
+  tl:
+    description: "Shares your current coordinates with your teammates."
+    usage: /<command>
+    aliases: [teamcoords]
+    permission: "uhc-core.commands.teamcoords"
 permissions:
+  uhc-core.commands.teamcoords:
+    description: "Allows sharing your coordinates with your team during the game."
+    default: true
   uhc-core.commands.latescatter:
     description: "Allows scattering a player who joined late into the running game."
     default: op

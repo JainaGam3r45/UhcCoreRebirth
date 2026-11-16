@@ -444,6 +444,7 @@ public class GameManager{
 		registerCommand("deathmatch", new DeathmatchCommandExecutor(this, deathmatchHandler));
 		registerCommand("team", new TeamCommandExecutor(this));
 		registerCommand("heal", new HealCommandExecutor(playerManager));
+		registerCommand("tl", new TeamCoordsCommandExecutor(this));
 	}
 
 	private void registerCommand(String commandName, CommandExecutor executor){
