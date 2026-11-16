@@ -74,7 +74,8 @@ public class TeamCoordsCommandExecutor implements CommandExecutor{
 			return true;
 		}
 
-		// Expired entries are useless, drop them here so the map never outgrows the online player count.
+		// Pruned on every share, so the map only holds players who used /tl within one cooldown
+		// of the latest share, not everyone who ever used it this game.
 		lastShared.values().removeIf(time -> now - time >= COOLDOWN_MILLIS);
 		lastShared.put(player.getUniqueId(), now);
 
