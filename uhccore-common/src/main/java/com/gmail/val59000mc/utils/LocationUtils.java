@@ -209,9 +209,10 @@ public class LocationUtils {
 	 * @param x the X-coordinate of the preferred column
 	 * @param z the Z-coordinate of the preferred column
 	 * @param radius how many blocks away from the column to look
+	 * @param minY lowest Y a player may end up standing at, lower columns are skipped
 	 * @return a location standing on top of the surface, or {@code null} if no column was safe
 	 */
-	public static Location getSafeSurfaceLocationNear(World world, int x, int z, int radius) {
+	public static Location getSafeSurfaceLocationNear(World world, int x, int z, int radius, int minY) {
 		for (int ring = 0; ring <= radius; ring++) {
 			for (int dx = -ring; dx <= ring; dx++) {
 				for (int dz = -ring; dz <= ring; dz++) {
@@ -219,7 +220,7 @@ public class LocationUtils {
 						continue;
 					}
 					final Block safeSpot = findSafeSpawnAt(world, x + dx, z + dz);
-					if (safeSpot != null) {
+					if (safeSpot != null && safeSpot.getY() + 1 >= minY) {
 						return safeSpot.getLocation().add(0.5, 1, 0.5);
 					}
 				}

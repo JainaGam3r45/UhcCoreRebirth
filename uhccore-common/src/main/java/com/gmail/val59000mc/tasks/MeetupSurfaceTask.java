@@ -93,14 +93,17 @@ public class MeetupSurfaceTask implements Runnable {
 		if (!world.equals(location.getWorld())) {
 			return false;
 		}
+		return isOutsideBorder(location) || isUnderground(location);
+	}
 
+	private boolean isOutsideBorder(Location location) {
 		WorldBorder border = world.getWorldBorder();
 		double halfSize = border.getSize() / 2;
 		Location center = border.getCenter();
-		if (Math.abs(location.getX() - center.getX()) > halfSize || Math.abs(location.getZ() - center.getZ()) > halfSize) {
-			return true;
-		}
+		return Math.abs(location.getX() - center.getX()) > halfSize || Math.abs(location.getZ() - center.getZ()) > halfSize;
+	}
 
+	private boolean isUnderground(Location location) {
 		int x = location.getBlockX();
 		int z = location.getBlockZ();
 		int minSolidY = location.getBlockY() + maxDepth + 1;
@@ -144,21 +147,31 @@ public class MeetupSurfaceTask implements Runnable {
 		}
 
 		// They had up to a few ticks in the queue to climb out, die or log off.
-		if (!uhcPlayer.isPlaying() || uhcPlayer.isFrozen() || !isStranded(player)) {
+		Location location = player.getLocation();
+		if (!uhcPlayer.isPlaying() || uhcPlayer.isFrozen() || !world.equals(location.getWorld())) {
 			return;
 		}
+		boolean outsideBorder = isOutsideBorder(location);
+		if (!outsideBorder && !isUnderground(location)) {
+			return;
+		}
+
+		// In an open shaft the player's own column tops out at the shaft floor, so the
+		// nearest "surface" is the exact spot they're standing on. Anything at or below
+		// the allowed depth would just get them flagged again. Someone caught outside the
+		// border on a hill is fine landing lower, they're not hiding.
+		int minY = outsideBorder ? Integer.MIN_VALUE : location.getBlockY() + maxDepth + 1;
 
 		WorldBorder border = world.getWorldBorder();
 		Location center = border.getCenter();
 		double limit = Math.max(0, border.getSize() / 2 - BORDER_MARGIN);
-		Location location = player.getLocation();
 		int x = (int) Math.floor(clamp(location.getX(), center.getX() - limit, center.getX() + limit));
 		int z = (int) Math.floor(clamp(location.getZ(), center.getZ() - limit, center.getZ() + limit));
 
-		Location target = LocationUtils.getSafeSurfaceLocationNear(world, x, z, SEARCH_RADIUS);
+		Location target = LocationUtils.getSafeSurfaceLocationNear(world, x, z, SEARCH_RADIUS, minY);
 		if (target == null) {
-			// Lava lake or cactus field up there. Better to leave them be until the
-			// next check than to drop them into lava ourselves.
+			// Lava lake, cactus field or nothing tall enough nearby. Better to leave them
+			// be until the next check than to drop them into lava ourselves.
 			return;
 		}
 		player.setFallDistance(0);
