@@ -145,7 +145,9 @@ public class UhcTeam {
 
 	public boolean isFull() {
 		MainConfig cfg = GameManager.getGameManager().getConfig();
-		return (cfg.get(MainConfig.MAX_PLAYERS_PER_TEAM) == getMembers().size());
+		// >= on purpose: if the team size gets lowered at runtime after teams formed,
+		// an oversized team should still count as full instead of accepting more players.
+		return getMembers().size() >= cfg.get(MainConfig.MAX_PLAYERS_PER_TEAM);
 	}
 
 	public void leave(UhcPlayer player) throws UhcTeamException {
