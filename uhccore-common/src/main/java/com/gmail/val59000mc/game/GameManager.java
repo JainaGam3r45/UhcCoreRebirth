@@ -190,13 +190,19 @@ public class GameManager{
 		long newTime = Math.max(0, oldTime + secondsDiff);
 		setElapsedTime(newTime);
 
-		long currentRemaining = getRemainingTime();
-		long newRemaining = Math.max(0, currentRemaining - secondsDiff);
-		setRemainingTime(newRemaining);
+		// Rewinding past 0 gets clamped, so the other timers must only move by what actually changed.
+		long appliedDiff = newTime - oldTime;
+
+		boolean deathmatchEnabled = config.get(MainConfig.ENABLE_DEATHMATCH);
+		long newRemaining = 0;
+		if (deathmatchEnabled) {
+			newRemaining = Math.max(0, getRemainingTime() - appliedDiff);
+			setRemainingTime(newRemaining);
+		}
 
 		if (enablePVPTask != null) {
 			int currentPvp = enablePVPTask.getTimeBeforePvp();
-			int newPvp = (int) Math.max(0, currentPvp - secondsDiff);
+			int newPvp = (int) Math.min(Integer.MAX_VALUE, Math.max(0, currentPvp - appliedDiff));
 			enablePVPTask.setTimeBeforePvp(newPvp);
 			if (newPvp <= 0 && !getPvp() && getGameState() == GameState.PLAYING) {
 				setPvp(true);
@@ -205,7 +211,7 @@ public class GameManager{
 			}
 		}
 
-		if (newRemaining <= 0 && getGameState() == GameState.PLAYING) {
+		if (deathmatchEnabled && newRemaining <= 0 && getGameState() == GameState.PLAYING) {
 			deathmatchHandler.startDeathmatch();
 		}
 	}

@@ -363,13 +363,11 @@ public class UhcCommandExecutor implements CommandExecutor{
 					sender.sendMessage(ChatColor.RED + "Usage: /uhc timer set <seconds>");
 					return true;
 				}
-				long seconds;
-				try {
-					seconds = Long.parseLong(args[2]);
-				} catch (NumberFormatException e) {
-					sender.sendMessage(ChatColor.RED + "Invalid number of seconds: " + args[2]);
+				Long parsed = parseTimerSeconds(sender, args[2], false);
+				if (parsed == null) {
 					return true;
 				}
+				long seconds = parsed;
 				gameManager.setTimer(seconds);
 				gameManager.broadcastInfoMessage(ChatColor.GOLD + "Game timer set to " + TimeUtils.getFormattedTime(seconds) + " by an administrator.");
 				sender.sendMessage(ChatColor.GREEN + "Timer set to " + seconds + "s (" + TimeUtils.getFormattedTime(seconds) + ").");
@@ -380,13 +378,11 @@ public class UhcCommandExecutor implements CommandExecutor{
 					sender.sendMessage(ChatColor.RED + "Usage: /uhc timer add <seconds>");
 					return true;
 				}
-				long seconds;
-				try {
-					seconds = Long.parseLong(args[2]);
-				} catch (NumberFormatException e) {
-					sender.sendMessage(ChatColor.RED + "Invalid number of seconds: " + args[2]);
+				Long parsed = parseTimerSeconds(sender, args[2], true);
+				if (parsed == null) {
 					return true;
 				}
+				long seconds = parsed;
 				gameManager.adjustTimer(seconds);
 				long current = gameManager.getElapsedTime();
 				gameManager.broadcastInfoMessage(ChatColor.GOLD + "Game timer adjusted by " + (seconds >= 0 ? "+" : "") + seconds + "s by an administrator.");
@@ -397,6 +393,24 @@ public class UhcCommandExecutor implements CommandExecutor{
 				sender.sendMessage(ChatColor.RED + "Usage: /uhc timer <set|add|pause> [seconds]");
 				return true;
 		}
+	}
+
+	// Capped at int range so the PvP countdown (an int) and elapsed + diff can't overflow.
+	private Long parseTimerSeconds(CommandSender sender, String input, boolean allowNegative) {
+		long seconds;
+		try {
+			seconds = Long.parseLong(input);
+		} catch (NumberFormatException e) {
+			sender.sendMessage(ChatColor.RED + "Invalid number of seconds: " + input);
+			return null;
+		}
+
+		long min = allowNegative ? -Integer.MAX_VALUE : 0;
+		if (seconds < min || seconds > Integer.MAX_VALUE) {
+			sender.sendMessage(ChatColor.RED + "Seconds must be between " + min + " and " + Integer.MAX_VALUE + ".");
+			return null;
+		}
+		return seconds;
 	}
 
 }

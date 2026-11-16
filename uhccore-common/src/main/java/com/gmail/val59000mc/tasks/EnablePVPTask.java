@@ -38,9 +38,12 @@ public class EnablePVPTask implements Runnable{
 		}
 
 		if(timeBeforePvp <= 0){
-			GameManager.getGameManager().setPvp(true);
-			GameManager.getGameManager().broadcastInfoMessage(Lang.PVP_ENABLED);
-			GameManager.getGameManager().getPlayerManager().playSoundToAll(UniversalSound.WITHER_SPAWN.getSound());
+			// /uhc timer may have flipped PvP on already; don't announce it twice.
+			if (!gameManager.getPvp()) {
+				GameManager.getGameManager().setPvp(true);
+				GameManager.getGameManager().broadcastInfoMessage(Lang.PVP_ENABLED);
+				GameManager.getGameManager().getPlayerManager().playSoundToAll(UniversalSound.WITHER_SPAWN.getSound());
+			}
 			return; // Stop task
 		}
 
