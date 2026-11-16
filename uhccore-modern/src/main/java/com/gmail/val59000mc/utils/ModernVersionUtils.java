@@ -67,10 +67,13 @@ public class ModernVersionUtils extends VersionUtils {
 	private static final String STRONG_POTION_PREFIX = "STRONG_";
 	private static final String LONG_POTION_PREFIX = "LONG_";
 
+	// Enum-style names the legacy jar and upstream kits store, e.g. GENERIC_MAX_HEALTH.
+	private static final String[] LEGACY_ATTRIBUTE_PREFIXES = {"generic_", "player_", "zombie_", "horse_"};
+
 	/**
 	 * Registry lookup that survives the 1.21.2 attribute rename, where Mojang dropped the
 	 * "generic." / "player." style prefixes. Tries the key as-is, then without the prefix,
-	 * which is the same rename Attribute.valueOf used to apply behind our back.
+	 * so "generic.max_health" resolves on 1.21.0/1.21.1 and on 1.21.2+ alike.
 	 */
 	@Nullable
 	public static Attribute findAttribute(NamespacedKey key) {
@@ -103,13 +106,36 @@ public class ModernVersionUtils extends VersionUtils {
 		return key.toString();
 	}
 
+	// Old enum names like GENERIC_ATTACK_DAMAGE only ever resolved through valueOf because
+	// Paper's Commodore rewrote them for us. The registry knows nothing about them, so we
+	// rebuild the real key: generic_attack_damage -> generic.attack_damage, and findAttribute
+	// drops the prefix again on 1.21.2+.
 	private static Attribute parseAttributeName(String name) {
-		NamespacedKey key = NamespacedKey.fromString(name.toLowerCase(Locale.ROOT));
+		String lowerName = name.toLowerCase(Locale.ROOT);
+		// Horse jump strength became generic.jump_strength back in 1.20.5.
+		if ("horse_jump_strength".equals(lowerName)) {
+			lowerName = "generic_jump_strength";
+		}
+		NamespacedKey key = NamespacedKey.fromString(lowerName);
 		Attribute attribute = key == null ? null : findAttribute(key);
+		if (attribute == null && key != null && NamespacedKey.MINECRAFT.equals(key.getNamespace())) {
+			attribute = findLegacyAttribute(key.getKey());
+		}
 		if (attribute == null) {
 			throw new IllegalArgumentException("No attribute found with the name " + name);
 		}
 		return attribute;
+	}
+
+	@Nullable
+	private static Attribute findLegacyAttribute(String legacyName) {
+		for (String prefix : LEGACY_ATTRIBUTE_PREFIXES) {
+			if (legacyName.startsWith(prefix) && legacyName.length() > prefix.length()) {
+				String dotted = prefix.substring(0, prefix.length() - 1) + "." + legacyName.substring(prefix.length());
+				return findAttribute(NamespacedKey.minecraft(dotted));
+			}
+		}
+		return null;
 	}
 
 	@Override
