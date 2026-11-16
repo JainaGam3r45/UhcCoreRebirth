@@ -25,6 +25,7 @@ public class DefaultVersionBridge implements VersionBridge {
 
 	private static final Logger LOGGER = Logger.getLogger(DefaultVersionBridge.class.getCanonicalName());
 	private static boolean loggedReadOnlyScoreWarning = false;
+	private static volatile boolean actionBarUnsupported = false;
 
 	@Override
 	public void setWorldBorder(World world, double centerX, double centerZ, double sideLength) {
@@ -204,8 +205,16 @@ public class DefaultVersionBridge implements VersionBridge {
 
 	@Override
 	public void sendActionBar(Player player, String message) {
+		if (actionBarUnsupported) {
+			return;
+		}
 		try {
 			player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(message));
+		} catch (LinkageError e) {
+			// Old Spigot (1.8.8) has no ChatMessageType overload. Falling back to chat here would
+			// flood it, NoClean pushes a countdown every second, so just go quiet from now on.
+			actionBarUnsupported = true;
+			LOGGER.log(Level.FINE, "Action bar not supported on this server, skipping it", e);
 		} catch (Throwable t) {
 			player.sendMessage(message);
 		}

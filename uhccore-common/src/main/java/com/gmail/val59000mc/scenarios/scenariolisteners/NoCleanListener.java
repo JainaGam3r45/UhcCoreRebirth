@@ -27,6 +27,7 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.entity.ProjectileLaunchEvent;
+import org.bukkit.event.player.PlayerBucketEmptyEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.projectiles.ProjectileSource;
 import org.bukkit.scheduler.BukkitTask;
@@ -41,7 +42,22 @@ public class NoCleanListener extends ScenarioListener {
 
 	public NoCleanListener() {
 		pvpCooldown = new HashMap<>();
+	}
+
+	// ScenarioManager builds a fresh listener on every enable, so the timer has to live and die
+	// with onEnable/onDisable or each toggle leaks another repeating task.
+	@Override
+	public void onEnable() {
 		startCountdownTask();
+	}
+
+	@Override
+	public void onDisable() {
+		if (countdownTask != null) {
+			countdownTask.cancel();
+			countdownTask = null;
+		}
+		pvpCooldown.clear();
 	}
 
 	private void startCountdownTask() {
@@ -106,26 +122,23 @@ public class NoCleanListener extends ScenarioListener {
 
 	@EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
 	public void onEntityDamageByEntity(EntityDamageByEntityEvent e) {
-		if (!(e.getEntity() instanceof Player)) {
+		Player damager = resolvePlayerAttack(e);
+		if (damager == null) {
 			return;
 		}
 
-		Player victim = (Player) e.getEntity();
-		Player damager = resolvePlayerDamager(e.getDamager());
-
-		if (damager == null || damager.getUniqueId().equals(victim.getUniqueId())) {
-			return;
-		}
-
-		// Attacking another player breaks protection immediately
-		if (isProtected(damager.getUniqueId())) {
-			breakProtection(damager, "Protection broken because you attacked another player!");
-		}
-
-		// Cancel damage on protected victim
-		if (isProtected(victim.getUniqueId())) {
+		if (isProtected(e.getEntity().getUniqueId())) {
 			e.setCancelled(true);
 			damager.sendMessage(Lang.SCENARIO_NOCLEAN_ERROR);
+		}
+	}
+
+	// MONITOR so hits that friendly fire or PvP-off cancel later don't cost the attacker their protection.
+	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+	public void onEntityDamageByEntityMonitor(EntityDamageByEntityEvent e) {
+		Player damager = resolvePlayerAttack(e);
+		if (damager != null && isProtected(damager.getUniqueId())) {
+			breakProtection(damager, "Protection broken because you attacked another player!");
 		}
 	}
 
@@ -179,12 +192,25 @@ public class NoCleanListener extends ScenarioListener {
 		Material material = block.getType();
 		String materialName = material.name();
 
-		boolean isHazard = materialName.contains("LAVA")
-				|| materialName.contains("FIRE")
-				|| materialName.contains("TNT")
-				|| materialName.contains("CRYSTAL");
+		boolean isHazard = materialName.contains("FIRE")
+				|| materialName.contains("TNT");
 
 		if (isHazard && isNearOtherPlayers(player, block.getLocation(), 15.0)) {
+			breakProtection(player, "Protection broken because you placed a hazard near another player!");
+		}
+	}
+
+	// Lava buckets never fire BlockPlaceEvent, they come through here.
+	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+	public void onBucketEmpty(PlayerBucketEmptyEvent e) {
+		Player player = e.getPlayer();
+		if (e.getBucket() != Material.LAVA_BUCKET || !isProtected(player.getUniqueId())) {
+			return;
+		}
+
+		// getBlock() doesn't exist on 1.8.8, so work out the target from the clicked face.
+		Location target = e.getBlockClicked().getRelative(e.getBlockFace()).getLocation();
+		if (isNearOtherPlayers(player, target, 15.0)) {
 			breakProtection(player, "Protection broken because you placed a hazard near another player!");
 		}
 	}
@@ -192,6 +218,18 @@ public class NoCleanListener extends ScenarioListener {
 	@EventHandler
 	public void onPlayerQuit(PlayerQuitEvent e) {
 		pvpCooldown.remove(e.getPlayer().getUniqueId());
+	}
+
+	private Player resolvePlayerAttack(EntityDamageByEntityEvent e) {
+		if (!(e.getEntity() instanceof Player)) {
+			return null;
+		}
+
+		Player damager = resolvePlayerDamager(e.getDamager());
+		if (damager == null || damager.getUniqueId().equals(e.getEntity().getUniqueId())) {
+			return null;
+		}
+		return damager;
 	}
 
 	private Player resolvePlayerDamager(Entity damagerEntity) {

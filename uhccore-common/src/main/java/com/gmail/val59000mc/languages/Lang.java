@@ -479,7 +479,7 @@ public class Lang{
 		SCENARIO_BOWLESS_ERROR = getString(lang, "scenarios.bowless.error", "&4[Bowless] &cYou can't craft bows!");
 		SCENARIO_HASTEY_BOYS_GRINDSTONE_ERROR = getString(lang, "scenarios.hastey_boys.grindstone-error", "&4[Hastey Boys] &cYou may not disenchant \"Hastey Boys\" tools.");
 		SCENARIO_HORSELESS_ERROR = getString(lang, "scenarios.horseless.error", "&4[Horseless] &cYou can't ride that horse!");
-		SCENARIO_NOCLEAN_INVULNERABLE = getString(lang, "scenarios.no_clean.invulnerable", "&4[NoClean] &aYou are now invulnerable for 30 seconds!");
+		SCENARIO_NOCLEAN_INVULNERABLE = getString(lang, "scenarios.no_clean.invulnerable", "&4[NoClean] &aYou are now invulnerable for %time% seconds!");
 		SCENARIO_NOCLEAN_VULNERABLE = getString(lang, "scenarios.no_clean.vulnerable", "&4[NoClean] &cYou can now take damage again!");
 		SCENARIO_NOCLEAN_ERROR = getString(lang, "scenarios.no_clean.error", "&4[NoClean] &cYou can't damage this player!");
 		SCENARIO_RODLESS_ERROR = getString(lang, "scenarios.rodless.error", "&4[Rodless] &cYou can't craft fishing rods!");
