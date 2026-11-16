@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.gmail.val59000mc.configuration.options.BasicOption;
 import com.gmail.val59000mc.configuration.options.Option;
 import com.google.common.io.Files;
 import org.apache.commons.lang.Validate;
@@ -393,6 +394,14 @@ public class YamlFile extends YamlConfiguration {
 
 	public <T> T get(Option<T> option){
 		return option.getValue(this);
+	}
+
+	/**
+	 * Changes the value in memory only. Nothing hits the disk until something calls a save method,
+	 * so a reload throws the change away.
+	 */
+	public <T> void set(BasicOption<T> option, T value){
+		option.setValue(this, value);
 	}
 
 	/**

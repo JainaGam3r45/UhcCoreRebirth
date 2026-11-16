@@ -37,4 +37,8 @@ public class BasicOption<T> implements Option<T>{
 		return (T) config.get(path, def);
 	}
 
+	public void setValue(YamlConfiguration config, T value){
+		config.set(path, value);
+	}
+
 }
