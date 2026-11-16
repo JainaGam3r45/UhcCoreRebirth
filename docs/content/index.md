@@ -4,23 +4,25 @@ hide:
   - navigation
 ---
 
-# UhcCore
+# UhcCore Rebirth
 
 UhcCore is a Spigot/Paper-compatible Minecraft server plugin which automates
 games of the classic UHC gamemode, and adds numerous configuration options as
 well as [scenarios][scenarios] to bring endless replayability to the gamemode.
+UhcCore Rebirth is a maintained continuation of the original UhcCore by
+val59000, Mezy and ZeroDind.
 
-You can read more about the project in the [README][readme] file, or visit the
-[UhcCore page on Spigot][spigot-page] to download the plugin. UhcCore is free
+You can read more about the project in the [README][readme] file, or grab the
+plugin from [the GitHub releases][releases]. UhcCore is free
 and open-source software (see
 ["Is this plugin free? Will it stay that way?"][is-it-free]), and the
-source code is available at [the GitLab repository][repo].
+source code is available at [the GitHub repository][repo].
 
 [scenarios]: #what-is-a-uhccore-scenario
-[readme]: https://gitlab.com/uhccore/uhccore/-/blob/main/README.md
-[spigot-page]: https://www.spigotmc.org/resources/uhccore.102507/
+[readme]: https://github.com/JainaGam3r45/UhcCoreRebirth/blob/main/README.md
+[releases]: https://github.com/JainaGam3r45/UhcCoreRebirth/releases
 [is-it-free]: faq#is-this-plugin-free-will-it-stay-that-way
-[repo]: https://gitlab.com/uhccore/uhccore
+[repo]: https://github.com/JainaGam3r45/UhcCoreRebirth
 
 ## What is UHC?
 

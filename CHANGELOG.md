@@ -1,5 +1,85 @@
 # Changelog
 
+## [1.22.0] - 2026-11-16
+
+UhcCore Rebirth `1.22.0` splits the plugin into two jars and adds a batch of
+host tools. Use `UhcCoreRebirth-Legacy-1.22.0.jar` (Java 8+) on Spigot/Paper
+1.8.8 to 1.20.6, and `UhcCoreRebirth-Modern-1.22.0.jar` (Java 21+) on Paper
+1.21.x and the 26.x line. The Modern jar refuses to start below 1.21 with a
+clear console error, and the Legacy jar logs a warning on 1.21+ recommending
+the Modern one.
+
+### New features
+
+- `/uhc host` GUI menu (permission `uhc-core.commands.host`, default op) to
+change team size, PvP time, friendly fire, spectate after death, apple rate,
+day/night cycle, moving border (end size, shrink delay, shrink duration),
+deathmatch and its delay, final heal and its delay, and the MeetUp surface rule
+(enable, max depth, check interval), with a link to the scenario editor.
+Changes stay in memory only (a reload or restart restores `config.yml`) and the
+menu locks once the game starts
+- `/uhc latescatter <player> [team]` (permission `uhc-core.commands.latescatter`, default op)
+- `/uhc timer <set|add|pause> [seconds]` (permission `uhc-core.commands.timer`, default op)
+- `/uhc revive <player> [clear]` subcommand. The old `/revive` command still
+works, and reviving now restores the player's death inventory when a snapshot
+is available
+- `/tl` (alias `/teamcoords`, permission `uhc-core.commands.teamcoords`, default
+true) sends your coordinates to your living teammates during the game, with a
+3 second cooldown
+- MeetUp surface rule for center deathmatch: `deathmatch.center-deathmatch.surface.enable`
+(default `false`), `max-depth` (default `10`) and `check-interval` (default `5`
+seconds). Players with more than `max-depth` solid blocks over their head, at
+the bottom of a dug shaft, or outside the border get pulled back to the surface
+inside the border. Leaves, glass and water don't count as solid cover
+- NoClean rework: protection now lasts 20 seconds by default (was 30), shows an
+action bar countdown on 1.9+, and breaks when the protected player attacks,
+places fire or TNT, or empties a lava bucket near other players
+
+### Bug fixes
+
+- The plugin wouldn't enable on 26.x, because PaperLib's version parser read
+26.x as version 0
+- The Modern jar now ships all the version adapters it needs
+- Gamerules are applied again on 1.12 (a `NoClassDefFoundError` was skipping them)
+- Kit attribute names such as `GENERIC_ATTACK_DAMAGE` load again on 1.21.3+
+- `/uhc timer` no longer starts a deathmatch that is disabled in the config
+- Revive no longer restores a stale inventory
+- The NoClean timer no longer leaks between scenario toggles, and no longer
+spams chat on 1.8
+- Oversized teams count as full when the team size is lowered
+
+### Other
+
+- Removed the GitLab CI pipeline
+
+## [1.21.0] - 2026-11-16
+
+First UhcCore Rebirth release, picking up from upstream UhcCore `1.20.15`.
+
+### New features
+
+- Support for Paper 1.21 and 1.21.4 (Tricky Trials and Pale Garden blocks and
+items, such as maces, heavy cores, breeze rods, crafters and pale oak)
+- Built-in update checker that notifies the console and admins when a new
+release is published on GitHub
+- `spawn-chunk-radius` option for 1.20.5+ (the default `0` stops spawn chunks
+from staying loaded and saves RAM)
+
+### Bug fixes
+
+- Timber chops pale oak, lets creaking hearts break naturally and no longer
+loads chunks synchronously on chunk borders
+- VeinMiner handles veins that mix deepslate and normal ores
+- CutClean smelts raw metal blocks directly
+- DragonRush portal search no longer runs past the world floor into the void
+on 1.18+ worlds
+- SuperHeroes applies its potion effects with both the old and the new
+(1.20.5+) effect names
+
+### Other
+
+- Removed the abandoned GitLab NMS dependencies and Maven repository from the build
+
 ## [1.20.15] - 2025-10-12
 
 UhcCore version `1.20.15` is now here! The update brings a few small fixes,

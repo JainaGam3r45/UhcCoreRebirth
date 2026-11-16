@@ -323,15 +323,17 @@ help from one person, whereas anyone can help you if you send a paste link.
 ## Where can I find the default configuration values? How do I reset to default?
 
 The default configuration values for most files in the `plugins/UhcCore`
-directory [can be found here][configs]. Just make sure to change the version
-string in the URL so that it matches the version of UhcCore you have installed.
+directory [can be found here][configs]. That link shows the `main` branch, so
+use the branch/tag selector on GitHub to pick the release tag (for example
+`v1.21.0`) that matches the version you have installed. Up to 1.21.0 these
+files live in `src/main/resources` instead.
 
 In order to reset all of the settings in a configuration file to their default
 values, just delete the file (or move/rename it, to keep a backup). When the
 server is started, UhcCore will generate a new config file with the default
 values.
 
-[configs]: https://gitlab.com/uhccore/uhccore/-/tree/1.20.15/src/main/resources
+[configs]: https://github.com/JainaGam3r45/UhcCoreRebirth/tree/main/uhccore-common/src/main/resources
 
 ## Where can I read more about configuration, commands etc? Is there a wiki?
 
@@ -366,74 +368,17 @@ Either way, if you're *really* eager to make an addon, and you are already
 familiar with Java programming and plugin development, you *can* technically
 use the UhcCore plugin JAR as a dependency and pretend that it's an API.
 This has been done in the past, since the previous plugin maintainer used
-to refer to the plugin JAR as an API. Below are Gradle/Maven dependency
-snippets in case you're interested:
+to refer to the plugin JAR as an API.
 
-!!! example "Snippet: UhcCore repository"
+!!! note
 
-    === "Gradle (Groovy DSL)"
+    UhcCore Rebirth does not publish a Maven artifact. The old upstream
+    `net.zerodind:uhccore` package on GitLab is not updated for Rebirth.
+    To compile against the plugin, build it from source (see the README) or
+    use a jar from [the GitHub releases][releases] as a local `compileOnly`
+    dependency.
 
-        Add this to `repositories` in your `build.gradle`:
-
-        ```groovy
-        maven {
-            name "uhccore"
-            url "https://gitlab.com/api/v4/groups/uhccore/-/packages/maven"
-        }
-        ```
-
-    === "Gradle (Kotlin DSL)"
-
-        Add this to `repositories` in your `build.gradle.kts`:
-
-        ```kotlin
-        maven {
-            name = "uhccore"
-            url = uri("https://gitlab.com/api/v4/groups/uhccore/-/packages/maven")
-        }
-        ```
-
-    === "Maven"
-
-        Add this to `repositories` in your `pom.xml`:
-
-        ```xml
-        <repository>
-            <id>uhccore</id>
-            <url>https://gitlab.com/api/v4/groups/uhccore/-/packages/maven</url>
-        </repository>
-        ```
-
-!!! example "Snippet: UhcCore plugin JAR dependency"
-
-    === "Gradle (Groovy DSL)"
-
-        Add this to `dependencies` in your `build.gradle`:
-
-        ```groovy
-        compileOnly "net.zerodind:uhccore:1.20.15"
-        ```
-
-    === "Gradle (Kotlin DSL)"
-
-        Add this to `dependencies` in your `build.gradle.kts`:
-
-        ```kotlin
-        compileOnly("net.zerodind:uhccore:1.20.15")
-        ```
-
-    === "Maven"
-
-        Add this to `dependencies` in your `pom.xml`:
-
-        ```xml
-        <dependency>
-            <groupId>net.zerodind</groupId>
-            <artifactId>uhccore</artifactId>
-            <version>1.20.15</version>
-            <scope>provided</scope>
-        </dependency>
-        ```
+[releases]: https://github.com/JainaGam3r45/UhcCoreRebirth/releases
 
 !!! warning
 
@@ -461,17 +406,14 @@ for more details on how to contribute your code.
 
 ## Who is the main developer/maintainer/owner of this plugin?
 
-That would be me! I am a computer science student who loves programming and
-Minecraft, and have been using UhcCore on my private server for a while.
-I took over the plugin ownership in June of 2022, because Mezy (the previous
-owner) stopped maintaining the plugin due to a lack of interest in the project.
+UhcCore Rebirth is maintained by
+[JainaGam3r45](https://github.com/JainaGam3r45), with hosting support from
+[JiferCloud](https://www.jifercraft.com).
 
-You can find me online on these places:
-
-- Discord: `zerodind#5905`
-- GitHub: <https://github.com/0dinD>
-- GitLab: <https://gitlab.com/0dinD>
-- SpigotMC: <https://www.spigotmc.org/members/zerodind.1572489/>
+Rebirth continues the work of the previous maintainers: val59000 created
+the plugin, Mezy maintained it after that, and ZeroDind took it over in
+June of 2022 and maintained the upstream
+[GitLab project](https://gitlab.com/uhccore/uhccore) up to version `1.20.15`.
 
 ## How can I increase the chances of a feature being added?
 
@@ -489,7 +431,7 @@ implementation alternatives). The more details you go into, the less work it is
 for me when implementing the feature.
 
 - While you *can* discuss feature requests and bug fixes on the Discord server,
-consider [opening an issue][issues] on GitLab. This helps me keep track of
+consider [opening an issue][issues] on GitHub. This helps me keep track of
 the feature request or bug, and makes sure it doesn't get lost in an old
 Discord conversation if it takes a while before I have time to fix it.
 
@@ -499,13 +441,13 @@ previous knowledge of Java programming and/or Minecraft plugin development.
 To get started, see
 ["I want to help contribute code to this project, where do I start?"][q6].
 
-[issues]: https://gitlab.com/uhccore/uhccore/-/issues
+[issues]: https://github.com/JainaGam3r45/UhcCoreRebirth/issues
 
 ## When will the next update be released? What features will it have?
 
 There is currently no complete roadmap, but you can always take a look at
-[the milestones in GitLab][milestones] to get some insight into current and
-future updates, if a milestone has been created for them. Please note that I
+[the open issues on GitHub][issues] to get some insight into current and
+future work. Please note that I
 generally won't be able to give out an ETA unless the release is almost ready.
 That's simply because I don't have that much time (and can't reliably predict
 when I have it), seeing as this is a hobby project that I work on
@@ -523,35 +465,18 @@ familiar with Git, you can also [view the list of commits][compare] since the
 previous version (using its tag) and the head of the `main` branch. Just make
 sure to select the right tag matching the version you want to compare from.
 
-[milestones]: https://gitlab.com/uhccore/uhccore/-/milestones
-[changelog]: https://gitlab.com/uhccore/uhccore/-/blob/main/CHANGELOG.md
-[compare]: https://gitlab.com/uhccore/uhccore/-/compare?from=1.20.15&to=main
+[changelog]: https://github.com/JainaGam3r45/UhcCoreRebirth/blob/main/CHANGELOG.md
+[compare]: https://github.com/JainaGam3r45/UhcCoreRebirth/compare/v1.21.0...main
 
 ## How can I try the latest improvements to UhcCore before they are released?
 
-The easiest way to try the latest UhcCore improvements (if they have not yet
-made it into a release) is to download a snapshot build. Snapshot builds are
-built from specific Git commits, and are, as the name implies, a snapshot of
-the UhcCore release that is currently being developed. Some features may not
-be finalized yet, and could change again before the final release.
+UhcCore Rebirth does not publish snapshot builds. To try changes that have
+not made it into a release yet, check out the `main` branch (or the commit you
+want) using Git and build the plugin from source, using the instructions in
+the project README file. Keep in mind that unreleased features may not be
+finalized yet, and could change again before the final release.
 
-[Here is a link to the latest UhcCore snapshot build.][latest-snapshot]
-Simply download the plugin JAR file (not the `javadoc` or `sources` JAR), and
-then install it on your server. Please report any problems you find with the
-snapshot build, via [GitLab][issues] or [Discord][discord].
-
-You can also find previous snapshot builds, by browsing the
-[GitLab CI jobs][ci-jobs] and finding the `build` jobs. On the CI job page,
-there is a button which allows you to browse the job artifacts, where you can
-find the snapshot build.
-
-Apart from the latest snapshot build, old snapshot builds are only kept for a
-maximum of 10 days. If you would like to try an older snapshot version of
-UhcCore, you can check out the relevant commit using Git, and build the plugin
-from the source code, using the instructions in the project README file.
-
-[latest-snapshot]: https://gitlab.com/uhccore/uhccore/-/jobs/artifacts/main/browse/build/libs?job=build
-[ci-jobs]: https://gitlab.com/uhccore/uhccore/-/jobs?statuses=SUCCESS
+Please report any problems you find via [GitHub issues][issues].
 
 ## I want to help contribute code to this project, where do I start?
 
@@ -563,8 +488,8 @@ I would highly encourage you to join [the Discord server][discord] and ask in
 the `#dev` channel if you have any questions. You can also use this channel
 to ask questions about and discuss the UhcCore source code.
 
-[readme]: https://gitlab.com/uhccore/uhccore/-/blob/main/README.md
-[contributing]: https://gitlab.com/uhccore/uhccore/-/blob/main/CONTRIBUTING.md
+[readme]: https://github.com/JainaGam3r45/UhcCoreRebirth/blob/main/README.md
+[contributing]: https://github.com/JainaGam3r45/UhcCoreRebirth/blob/main/CONTRIBUTING.md
 
 ## Is this plugin free? Will it stay that way?
 
