@@ -6,8 +6,8 @@ plugins {
 	id "net.kyori.indra.git" version "3.2.0"
 }
 
-group = "net.zerodind"
-version = "1.20.16-SNAPSHOT"
+group = "io.github.jainagam3r45"
+version = "1.21.0"
 
 repositories {
 	mavenCentral()
@@ -109,6 +109,7 @@ tasks.named("jar") {
 }
 
 tasks.named("shadowJar") {
+	archiveBaseName = "UhcCoreRebirth"
 	archiveClassifier = ""
 	configurations = project.providers.zip(
 		project.configurations.named("runtimeClasspath"),

@@ -13,6 +13,7 @@ import com.gmail.val59000mc.players.PlayerManager;
 import com.gmail.val59000mc.players.UhcPlayer;
 import com.gmail.val59000mc.players.UhcTeam;
 import com.gmail.val59000mc.tasks.KillDisconnectedPlayerTask;
+import com.gmail.val59000mc.utils.UpdateChecker;
 
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
@@ -61,7 +62,10 @@ public class PlayerConnectionListener implements Listener{
 
 	@EventHandler(priority=EventPriority.HIGHEST)
 	public void onPlayerJoin(final PlayerJoinEvent event){
-		Bukkit.getScheduler().runTaskLater(UhcCore.getPlugin(), () -> playerManager.playerJoinsTheGame(event.getPlayer()), 1);
+		Bukkit.getScheduler().runTaskLater(UhcCore.getPlugin(), () -> {
+			playerManager.playerJoinsTheGame(event.getPlayer());
+			UpdateChecker.notifyPlayerIfAdmin(event.getPlayer());
+		}, 1);
 	}
 
 	@EventHandler(priority=EventPriority.HIGHEST)

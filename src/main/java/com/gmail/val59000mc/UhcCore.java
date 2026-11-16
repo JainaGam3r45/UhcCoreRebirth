@@ -5,6 +5,7 @@ import java.util.logging.Logger;
 import com.gmail.val59000mc.configuration.MainConfig;
 import com.gmail.val59000mc.game.GameManager;
 import com.gmail.val59000mc.utils.PluginForwardingHandler;
+import com.gmail.val59000mc.utils.UpdateChecker;
 import com.gmail.val59000mc.versionadapters.VersionAdapterLoader;
 
 import org.bukkit.Bukkit;
@@ -27,6 +28,10 @@ public class UhcCore extends JavaPlugin{
 
 		gameManager.loadConfig();
 		versionAdapterLoader = VersionAdapterLoader.loadAll(getClassLoader());
+		if (gameManager.getConfig().get(MainConfig.CHECK_FOR_UPDATES)) {
+			UpdateChecker.checkForUpdates(this);
+		}
+
 		if (gameManager.getConfig().get(MainConfig.ENABLE_UHC)) {
 			Bukkit.getScheduler().runTaskLater(this, () -> gameManager.loadNewGame(), 1);
 			if (Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
