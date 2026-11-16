@@ -108,6 +108,11 @@ public class HostMenu implements InventoryHolder {
 		settings.put(31, HostSetting.seconds("final-heal-delay", Material.SUGAR, "Final Heal Time", MainConfig.FINAL_HEAL_DELAY,
 				60, 300, 0, 14400,
 				"When the final heal kicks in."));
+		// Read when deathmatch PvP turns on, so flipping it in the lobby is enough. Arena deathmatches
+		// never start the surface task, hence the warning in the lore.
+		settings.put(32, HostSetting.toggle("meetup-surface", Material.LADDER, "MeetUp Surface Rule", MainConfig.DEATHMATCH_SURFACE_ENABLE,
+				"Pulls players hiding underground or", "outside the border back to the surface.",
+				"Center deathmatch only, ignored", "when an arena is loaded."));
 
 		return settings;
 	}
