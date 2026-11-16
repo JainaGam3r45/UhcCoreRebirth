@@ -21,14 +21,32 @@ import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class TimebombListener extends ScenarioListener{
+
+	private static final Map<String, TimebombTask> ACTIVE_TIMEBOMBS = new ConcurrentHashMap<>();
 
 	@Option
 	private long delay = 30;
 
 	@Option(key = "explosion-power")
 	private double explosionPower = 10;
+
+	public static void cancelForPlayer(String playerName) {
+		TimebombTask task = ACTIVE_TIMEBOMBS.remove(playerName.toLowerCase());
+		if (task != null) {
+			task.cancelAndClean();
+		}
+	}
+
+	public static void cleanAll() {
+		for (TimebombTask task : ACTIVE_TIMEBOMBS.values()) {
+			task.cancelAndClean();
+		}
+		ACTIVE_TIMEBOMBS.clear();
+	}
 
 	@EventHandler (priority = EventPriority.HIGHEST)
 	public void onPlayerDeath(PlayerDeathEvent e) {
@@ -37,7 +55,8 @@ public class TimebombListener extends ScenarioListener{
 		e.getDrops().removeAll(e.getDrops());
 
 		TimebombTask timebombTask = new TimebombTask(drops, p.getLocation().getBlock().getLocation(), p.getName(), delay, (float) explosionPower);
-		Bukkit.getScheduler().scheduleSyncDelayedTask(UhcCore.getPlugin(), timebombTask,1L);
+		ACTIVE_TIMEBOMBS.put(p.getName().toLowerCase(), timebombTask);
+		Bukkit.getScheduler().scheduleSyncDelayedTask(UhcCore.getPlugin(), timebombTask, 1L);
 	}
 
 	public static class TimebombTask implements Runnable{
@@ -50,6 +69,7 @@ public class TimebombListener extends ScenarioListener{
 		private String name;
 		private boolean spawned;
 		private float explosionPower;
+		private volatile boolean cancelled = false;
 
 		public TimebombTask(List<ItemStack> drops, Location loc, String name, long delay, float explosionPower) {
 			this.drops = drops;
@@ -60,26 +80,59 @@ public class TimebombListener extends ScenarioListener{
 			this.explosionPower = explosionPower;
 		}
 
+		public void cancelAndClean() {
+			this.cancelled = true;
+			if (armorStand != null && !armorStand.isDead()) {
+				armorStand.remove();
+			}
+			if (block1 != null && block1.getType() == Material.CHEST) {
+				if (block1.getState() instanceof Chest) {
+					((Chest) block1.getState()).getInventory().clear();
+				}
+				block1.setType(Material.AIR);
+			}
+			if (block2 != null && block2.getType() == Material.CHEST) {
+				if (block2.getState() instanceof Chest) {
+					((Chest) block2.getState()).getInventory().clear();
+				}
+				block2.setType(Material.AIR);
+			}
+		}
+
 		@Override
 		public void run() {
-			if (!spawned){
+			if (cancelled) {
+				return;
+			}
+
+			if (!spawned) {
 				spawnChest();
 			}
 
-			if (timeLeft > 0){
-				armorStand.setCustomName(ChatColor.GOLD + "" + timeLeft);
+			if (timeLeft > 0) {
+				String timeStr;
+				if (timeLeft > 10) {
+					timeStr = ChatColor.YELLOW + "" + timeLeft + "s";
+				} else if (timeLeft > 3) {
+					timeStr = ChatColor.GOLD + "" + timeLeft + "s";
+				} else {
+					timeStr = ChatColor.RED + "" + timeLeft + "s";
+				}
+				armorStand.setCustomName(timeStr);
 				timeLeft--;
-				Bukkit.getScheduler().scheduleSyncDelayedTask(UhcCore.getPlugin(),this,20L);
-			}else{
-				armorStand.remove();
+				Bukkit.getScheduler().scheduleSyncDelayedTask(UhcCore.getPlugin(), this, 20L);
+			} else {
+				ACTIVE_TIMEBOMBS.remove(name.toLowerCase());
+				if (armorStand != null && !armorStand.isDead()) {
+					armorStand.remove();
+				}
 				block1.setType(Material.AIR);
 				block2.setType(Material.AIR);
 				block1.getWorld().createExplosion(block1.getLocation(), explosionPower, false);
 			}
-
 		}
 
-		private void spawnChest(){
+		private void spawnChest() {
 			spawned = true;
 
 			block1 = loc.getBlock();
@@ -109,13 +162,17 @@ public class TimebombListener extends ScenarioListener{
 				}
 			}
 
-			loc.add(1,-1,.5);
-
-			armorStand = (ArmorStand) loc.getWorld().spawnEntity(loc, EntityType.ARMOR_STAND);
+			Location standLoc = new Location(loc.getWorld(), loc.getBlockX() + 0.5, loc.getBlockY() - 0.8, loc.getBlockZ() + 0.5);
+			armorStand = (ArmorStand) loc.getWorld().spawnEntity(standLoc, EntityType.ARMOR_STAND);
 			armorStand.setCustomNameVisible(true);
 			armorStand.setGravity(false);
 			armorStand.setVisible(false);
-			armorStand.setCustomName("");
+			try {
+				armorStand.setMarker(true);
+			} catch (NoSuchMethodError ignored) {
+			}
+			String initialTime = (timeLeft > 10 ? ChatColor.YELLOW : (timeLeft > 3 ? ChatColor.GOLD : ChatColor.RED)) + "" + timeLeft + "s";
+			armorStand.setCustomName(initialTime);
 		}
 	}
 

@@ -4,6 +4,7 @@ import java.util.logging.Logger;
 
 import com.gmail.val59000mc.configuration.MainConfig;
 import com.gmail.val59000mc.game.GameManager;
+import com.gmail.val59000mc.scenarios.scenariolisteners.TimebombListener;
 import com.gmail.val59000mc.utils.PluginForwardingHandler;
 import com.gmail.val59000mc.utils.UpdateChecker;
 import com.gmail.val59000mc.versionadapters.VersionAdapterLoader;
@@ -40,6 +41,11 @@ public class UhcCore extends JavaPlugin{
 		} else {
 			LOGGER.warning("NOTE: UHC is disabled, by the enable-uhc option in plugins/UhcCore/config.yml");
 		}
+	}
+
+	@Override
+	public void onDisable() {
+		TimebombListener.cleanAll();
 	}
 
 	public static UhcCore getPlugin(){

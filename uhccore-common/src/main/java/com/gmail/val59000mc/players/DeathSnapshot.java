@@ -1,15 +1,20 @@
 package com.gmail.val59000mc.players;
 
+import com.gmail.val59000mc.exceptions.UhcPlayerNotOnlineException;
+import com.gmail.val59000mc.game.GameManager;
+import com.gmail.val59000mc.utils.LocationUtils;
+import org.bukkit.Location;
+import org.bukkit.World;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
+
+import javax.annotation.Nullable;
 import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import javax.annotation.Nullable;
-import org.bukkit.Location;
-import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.PlayerInventory;
 
 public class DeathSnapshot {
 
@@ -81,7 +86,42 @@ public class DeathSnapshot {
 		SNAPSHOTS.clear();
 	}
 
+	public Location resolveSafeLocation(Player player, @Nullable UhcPlayer uhcPlayer) {
+		if (deathLocation != null && deathLocation.getWorld() != null && LocationUtils.isWithinBorder(deathLocation)) {
+			return deathLocation;
+		}
+
+		UhcTeam targetTeam = uhcPlayer != null ? uhcPlayer.getTeam() : this.team;
+		if (targetTeam != null) {
+			for (UhcPlayer member : targetTeam.getMembers()) {
+				if ((uhcPlayer == null || !member.equals(uhcPlayer)) && member.getState() == PlayerState.PLAYING) {
+					try {
+						Player teammate = member.getPlayer();
+						Location teammateLoc = teammate.getLocation();
+						if (LocationUtils.isWithinBorder(teammateLoc)) {
+							return teammateLoc;
+						}
+					} catch (UhcPlayerNotOnlineException ignored) {
+					}
+				}
+			}
+		}
+
+		GameManager gm = GameManager.getGameManager();
+		World world = deathLocation != null && deathLocation.getWorld() != null
+				? deathLocation.getWorld()
+				: gm.getMapLoader().getUhcWorld(World.Environment.NORMAL);
+
+		double borderHalfSize = world.getWorldBorder().getSize() / 2.0;
+		int safeRadius = Math.max(10, (int) borderHalfSize - 15);
+		return LocationUtils.getRandomSpawnLocation(world, safeRadius);
+	}
+
 	public void restore(Player player) {
+		restore(player, null);
+	}
+
+	public void restore(Player player, @Nullable UhcPlayer uhcPlayer) {
 		PlayerInventory inv = player.getInventory();
 		if (inventoryContents != null) {
 			inv.setContents(cloneItemArray(inventoryContents));
@@ -96,8 +136,9 @@ public class DeathSnapshot {
 		player.setExp(xpProgress);
 		player.setTotalExperience(totalExperience);
 
-		if (deathLocation != null && deathLocation.getWorld() != null) {
-			player.teleport(deathLocation);
+		Location safeLoc = resolveSafeLocation(player, uhcPlayer);
+		if (safeLoc != null && safeLoc.getWorld() != null) {
+			player.teleport(safeLoc);
 		}
 	}
 

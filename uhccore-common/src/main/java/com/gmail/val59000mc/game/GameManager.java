@@ -17,6 +17,7 @@ import com.gmail.val59000mc.players.PlayerManager;
 import com.gmail.val59000mc.players.TeamManager;
 import com.gmail.val59000mc.players.UhcPlayer;
 import com.gmail.val59000mc.scenarios.ScenarioManager;
+import com.gmail.val59000mc.scenarios.scenariolisteners.TimebombListener;
 import com.gmail.val59000mc.scoreboard.ScoreboardLayout;
 import com.gmail.val59000mc.scoreboard.ScoreboardManager;
 import com.gmail.val59000mc.tasks.ElapsedTimeTask;
@@ -405,6 +406,7 @@ public class GameManager{
 			pvp = false;
 			gameIsEnding = true;
 			broadcastInfoMessage(Lang.GAME_FINISHED);
+			TimebombListener.cleanAll();
 			playerManager.playSoundToAll(UniversalSound.ENDERDRAGON_GROWL.getSound(), 1, 2);
 			playerManager.setAllPlayersEndGame();
 			Bukkit.getScheduler().scheduleSyncDelayedTask(UhcCore.getPlugin(), new StopRestartTask(),20);

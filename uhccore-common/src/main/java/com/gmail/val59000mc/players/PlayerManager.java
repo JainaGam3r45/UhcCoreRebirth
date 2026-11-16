@@ -16,6 +16,8 @@ import com.gmail.val59000mc.game.handlers.CustomEventHandler;
 import com.gmail.val59000mc.game.handlers.ScoreboardHandler;
 import com.gmail.val59000mc.languages.Lang;
 import com.gmail.val59000mc.scenarios.Scenario;
+import com.gmail.val59000mc.scenarios.scenariolisteners.TimebombListener;
+import com.gmail.val59000mc.scoreboard.ScoreboardType;
 import com.gmail.val59000mc.tasks.CheckRemainingPlayerTask;
 import com.gmail.val59000mc.tasks.TeleportPlayersTask;
 import com.gmail.val59000mc.tasks.TimeBeforeSendBungeeTask;
@@ -215,39 +217,17 @@ public class PlayerManager {
 				setPlayerStartPlaying(uhcPlayer);
 
 				if(!uhcPlayer.getHasBeenTeleportedToLocation()){
-					List<UhcPlayer> onlinePlayingMembers = uhcPlayer.getTeam().getOnlinePlayingMembers();
-
-					// Only player in team so create random spawn location.
-					if(onlinePlayingMembers.size() <= 1){
-						World world = gm.getMapLoader().getUhcWorld(World.Environment.NORMAL);
-						int maxDistance = (int) gm.getMapLoader().getOverworldBorderApothem();
-						uhcPlayer.getTeam().setStartingLocation(LocationUtils.getRandomSpawnLocation(world, maxDistance));
-					}
-					// Set spawn location at team mate.
-					else{
-						UhcPlayer teamMate = onlinePlayingMembers.get(0);
-						if (teamMate == uhcPlayer){
-							teamMate = onlinePlayingMembers.get(1);
-						}
-
-						try{
-							uhcPlayer.getTeam().setStartingLocation(teamMate.getPlayer().getLocation());
-						} catch (UhcPlayerNotOnlineException ingored) {
-							// Should not happen
-						}
-					}
-
-					// Teleport player
-					UhcPlayer.teleport(player, LocationUtils.withSameDirection(uhcPlayer.getStartingLocation(), player));
-					uhcPlayer.setHasBeenTeleportedToLocation(true);
-
-					// Restore inventory if revived
 					Optional<DeathSnapshot> deathSnapshot = DeathSnapshot.get(uhcPlayer.getUuid());
 					if (deathSnapshot.isPresent()) {
-						deathSnapshot.get().restore(player);
-					} else if (!uhcPlayer.getStoredItems().isEmpty()) {
-						uhcPlayer.getStoredItems().forEach(item -> player.getWorld().dropItem(player.getLocation(), item.reanimate()));
-						uhcPlayer.getStoredItems().clear();
+						deathSnapshot.get().restore(player, uhcPlayer);
+						uhcPlayer.setHasBeenTeleportedToLocation(true);
+					} else {
+						teleportRevivedPlayerToSafeLocation(player, uhcPlayer);
+						uhcPlayer.setHasBeenTeleportedToLocation(true);
+						if (!uhcPlayer.getStoredItems().isEmpty()) {
+							uhcPlayer.getStoredItems().forEach(item -> player.getWorld().dropItem(player.getLocation(), item.reanimate()));
+							uhcPlayer.getStoredItems().clear();
+						}
 					}
 
 					// Call event
@@ -352,6 +332,11 @@ public class PlayerManager {
 				}
 
 				player.setGameMode(GameMode.SURVIVAL);
+				player.setAllowFlight(false);
+				player.setFlying(false);
+				player.setFoodLevel(20);
+				player.setSaturation(20f);
+				player.setExhaustion(0f);
 				UhcItems.giveGameItemTo(player, GameItem.COMPASS_ITEM);
 				UhcItems.giveGameItemTo(player, GameItem.CUSTOM_CRAFT_BOOK);
 				KitsManager.giveKitTo(player);
@@ -668,28 +653,114 @@ public class PlayerManager {
 	}
 
 	public void revivePlayer(UhcPlayer uhcPlayer, boolean spawnWithItems){
-		uhcPlayer.setHasBeenTeleportedToLocation(false);
 		uhcPlayer.setState(PlayerState.PLAYING);
 
-		// If not respawn with items, clear stored items and snapshot.
+		if (uhcPlayer.getOfflineZombieUuid() != null) {
+			UUID zombieUuid = uhcPlayer.getOfflineZombieUuid();
+			for (World world : Bukkit.getWorlds()) {
+				for (Zombie zombie : world.getEntitiesByClass(Zombie.class)) {
+					if (zombie.getUniqueId().equals(zombieUuid)) {
+						zombie.remove();
+						break;
+					}
+				}
+			}
+			uhcPlayer.setOfflineZombieUuid(null);
+		}
+
+		TimebombListener.cancelForPlayer(uhcPlayer.getName());
+
 		if (!spawnWithItems){
 			uhcPlayer.getStoredItems().clear();
 			DeathSnapshot.remove(uhcPlayer.getUuid());
 		}
 
-		try{
+		try {
 			Player player = uhcPlayer.getPlayer();
+			if (player.isDead()) {
+				player.spigot().respawn();
+			}
+
+			MainConfig cfg = GameManager.getGameManager().getConfig();
+			clearPlayerInventory(player);
+			player.setFireTicks(0);
+
+			final int extraHalfHearts = cfg.get(MainConfig.ENABLE_EXTRA_HALF_HEARTS) ? cfg.get(MainConfig.EXTRA_HALF_HEARTS) : 0;
+			final double maxHealthBase = 20 + extraHalfHearts;
+			VersionUtils.getVersionUtils().setPlayerMaxHealth(player, maxHealthBase);
+			player.setHealth(maxHealthBase);
+
+			for (PotionEffect effect : player.getActivePotionEffects()) {
+				player.removePotionEffect(effect.getType());
+			}
+			for (PotionEffect effect : cfg.get(MainConfig.POTION_EFFECT_ON_START)) {
+				player.addPotionEffect(effect);
+			}
+
+			player.setGameMode(GameMode.SURVIVAL);
+			player.setAllowFlight(false);
+			player.setFlying(false);
+			player.setFoodLevel(20);
+			player.setSaturation(20f);
+			player.setExhaustion(0f);
+
 			if (spawnWithItems) {
 				Optional<DeathSnapshot> snapshot = DeathSnapshot.get(uhcPlayer.getUuid());
 				if (snapshot.isPresent()) {
-					snapshot.get().restore(player);
+					snapshot.get().restore(player, uhcPlayer);
+				} else {
+					UhcItems.giveGameItemTo(player, GameItem.COMPASS_ITEM);
+					UhcItems.giveGameItemTo(player, GameItem.CUSTOM_CRAFT_BOOK);
+					KitsManager.giveKitTo(player);
+					teleportRevivedPlayerToSafeLocation(player, uhcPlayer);
+				}
+			} else {
+				UhcItems.giveGameItemTo(player, GameItem.COMPASS_ITEM);
+				UhcItems.giveGameItemTo(player, GameItem.CUSTOM_CRAFT_BOOK);
+				KitsManager.giveKitTo(player);
+				teleportRevivedPlayerToSafeLocation(player, uhcPlayer);
+			}
+
+			uhcPlayer.setHasBeenTeleportedToLocation(true);
+
+			scoreboardHandler.setUpPlayerScoreboard(uhcPlayer, player);
+			scoreboardHandler.updatePlayerOnTab(uhcPlayer);
+			if (uhcPlayer.getTeam() != null) {
+				scoreboardHandler.updateTeamOnTab(uhcPlayer.getTeam());
+			}
+			ScoreboardType sbType = scoreboardHandler.getPlayerScoreboardType(uhcPlayer);
+			scoreboardHandler.updatePlayerSidebar(uhcPlayer, sbType);
+
+			Bukkit.getPluginManager().callEvent(new PlayerStartsPlayingEvent(uhcPlayer));
+		} catch (UhcPlayerNotOnlineException ignored) {
+			uhcPlayer.setHasBeenTeleportedToLocation(false);
+		}
+	}
+
+	public void teleportRevivedPlayerToSafeLocation(Player player, UhcPlayer uhcPlayer) {
+		if (uhcPlayer.getTeam() != null) {
+			for (UhcPlayer member : uhcPlayer.getTeam().getMembers()) {
+				if (!member.equals(uhcPlayer) && member.getState() == PlayerState.PLAYING) {
+					try {
+						Player teammate = member.getPlayer();
+						Location loc = teammate.getLocation();
+						if (LocationUtils.isWithinBorder(loc)) {
+							player.teleport(loc);
+							return;
+						}
+					} catch (UhcPlayerNotOnlineException ignored) {
+					}
 				}
 			}
-			playerJoinsTheGame(player);
-		} catch (UhcPlayerNotOnlineException ignored) {
-			// Player gets revived next time they attempt to join.
-			// We need to support reviving offline players, because they might not be permitted
-			// to be online (before they are revived) due to the can-spectate-after-death setting.
+		}
+
+		GameManager gm = GameManager.getGameManager();
+		World world = gm.getMapLoader().getUhcWorld(World.Environment.NORMAL);
+		double borderHalfSize = world.getWorldBorder().getSize() / 2.0;
+		int safeRadius = Math.max(10, (int) borderHalfSize - 15);
+		Location safeLoc = LocationUtils.getRandomSpawnLocation(world, safeRadius);
+		if (safeLoc != null) {
+			player.teleport(safeLoc);
 		}
 	}
 
