@@ -24,10 +24,13 @@ import java.util.Deque;
  */
 public class MeetupSurfaceTask implements Runnable {
 
-	// Must stay bigger than SEARCH_RADIUS, otherwise the safe spot search can
-	// land a player right back outside a border that keeps closing in.
+	// Targets stay this far inside the border, so one that keeps closing in doesn't
+	// catch the player again a few seconds after we moved them.
 	private static final int BORDER_MARGIN = 3;
-	private static final int SEARCH_RADIUS = 2;
+	// Wide enough to get out from under a decent lake or lava pool; with a 2 block
+	// radius hiding under one was a free pass. Rings go outward and stop at the first
+	// hit, so the full 33x33 sweep only happens when everything around is liquid.
+	private static final int SEARCH_RADIUS = 16;
 	// Two blocks out reaches past the walls of a 1x1 or 2x2 shaft (and the middle of a 3x3).
 	private static final int SHAFT_PROBE = 2;
 
@@ -171,7 +174,7 @@ public class MeetupSurfaceTask implements Runnable {
 		int x = (int) Math.floor(clamp(location.getX(), center.getX() - limit, center.getX() + limit));
 		int z = (int) Math.floor(clamp(location.getZ(), center.getZ() - limit, center.getZ() + limit));
 
-		Location target = LocationUtils.getSafeSurfaceLocationNear(world, x, z, SEARCH_RADIUS, minY);
+		Location target = LocationUtils.getSafeSurfaceLocationNear(world, x, z, SEARCH_RADIUS, minY, limit);
 		if (target == null) {
 			// Lava lake, cactus field or nothing tall enough nearby. Better to leave them
 			// be until the next check than to drop them into lava ourselves.
