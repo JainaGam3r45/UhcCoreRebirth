@@ -6,6 +6,7 @@ import com.gmail.val59000mc.exceptions.UhcPlayerNotOnlineException;
 import com.gmail.val59000mc.exceptions.UhcTeamException;
 import com.gmail.val59000mc.game.GameManager;
 import com.gmail.val59000mc.game.GameState;
+import com.gmail.val59000mc.host.HostMenu;
 import com.gmail.val59000mc.players.PlayerState;
 import com.gmail.val59000mc.players.PlayerManager;
 import com.gmail.val59000mc.players.TeamManager;
@@ -76,6 +77,14 @@ public class UhcCommandExecutor implements CommandExecutor{
 				return true;
 			}
 			return handleTimerSubCommand(sender, args);
+		}
+
+		if (args.length == 1 && args[0].equalsIgnoreCase("host")){
+			if (!sender.hasPermission(HostMenu.PERMISSION)){
+				sender.sendMessage(ChatColor.RED + "You don't have permission to change the host settings.");
+				return true;
+			}
+			return handleHostSubCommand(sender);
 		}
 
 		// debug commands
@@ -308,6 +317,20 @@ public class UhcCommandExecutor implements CommandExecutor{
 		pm.lateScatterPlayer(targetUhcPlayer);
 		sender.sendMessage(ChatColor.GREEN + targetUhcPlayer.getName() + " has been late scattered into the game!");
 		onlinePlayer.sendMessage(ChatColor.GREEN + "You have been scattered into the game!");
+		return true;
+	}
+
+	private boolean handleHostSubCommand(CommandSender sender) {
+		if (!(sender instanceof Player)) {
+			sender.sendMessage(ChatColor.RED + "Only players can open the host menu.");
+			return true;
+		}
+		if (gameManager.getGameState() != GameState.WAITING) {
+			sender.sendMessage(ChatColor.RED + "Host settings can only be changed while players wait in the lobby.");
+			return true;
+		}
+
+		new HostMenu(gameManager).open((Player) sender);
 		return true;
 	}
 

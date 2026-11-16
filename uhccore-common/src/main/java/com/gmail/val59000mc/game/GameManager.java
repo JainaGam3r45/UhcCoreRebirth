@@ -10,6 +10,7 @@ import com.gmail.val59000mc.events.UhcGameStateChangedEvent;
 import com.gmail.val59000mc.events.UhcStartingEvent;
 import com.gmail.val59000mc.events.UhcStartedEvent;
 import com.gmail.val59000mc.game.handlers.*;
+import com.gmail.val59000mc.host.HostMenuListener;
 import com.gmail.val59000mc.languages.Lang;
 import com.gmail.val59000mc.listeners.*;
 import com.gmail.val59000mc.maploader.MapLoader;
@@ -411,6 +412,7 @@ public class GameManager{
 		listeners.add(new WorldListener());
 		listeners.add(new PlayerMovementListener(playerManager));
 		listeners.add(new PlayerHungerGainListener(playerManager));
+		listeners.add(new HostMenuListener());
 		for(Listener listener : listeners){
 			Bukkit.getServer().getPluginManager().registerEvents(listener, UhcCore.getPlugin());
 		}

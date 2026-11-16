@@ -79,3 +79,6 @@ permissions:
   uhc-core.commands.timer:
     description: "Allows adjusting or pausing the live game timer."
     default: op
+  uhc-core.commands.host:
+    description: "Allows opening the /uhc host menu to tweak game settings before the start."
+    default: op

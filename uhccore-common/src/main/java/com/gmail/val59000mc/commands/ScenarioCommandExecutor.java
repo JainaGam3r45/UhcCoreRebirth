@@ -18,7 +18,7 @@ public class ScenarioCommandExecutor implements CommandExecutor{
 
 	@Override
 	public boolean onCommand(CommandSender sender, Command command, String s, String[] args) {
-		if (args.length >= 1 && (args[0].equalsIgnoreCase("revive") || args[0].equalsIgnoreCase("latescatter") || args[0].equalsIgnoreCase("timer"))){
+		if (args.length >= 1 && (args[0].equalsIgnoreCase("revive") || args[0].equalsIgnoreCase("latescatter") || args[0].equalsIgnoreCase("timer") || args[0].equalsIgnoreCase("host"))){
 			PluginCommand uhcCmd = Bukkit.getPluginCommand("uhccore");
 			if (uhcCmd != null) {
 				return uhcCmd.execute(sender, "uhccore", args);
