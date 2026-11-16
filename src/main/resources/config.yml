@@ -89,8 +89,11 @@ announce-advancements: true
 # This feature might not make a lot of sense for UHC but if you want to enable natural health regen you can do it here.
 enable-health-regen: false
 
-# Whether to enable the locator bar on Minecraft 1.21.6+
+# Whether to enable the locator bar on Minecraft 1.21+
 enable-locator-bar: false
+
+# Spawn chunk radius for 1.20.5+ (Set to 0 to prevent spawn chunks from staying loaded in memory and save RAM)
+spawn-chunk-radius: 0
 
 #Configure after how many seconds a disconnected player should be considered dead and eliminated
 kill-disconnected-players-after-delay:

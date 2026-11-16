@@ -51,6 +51,7 @@ public class MapLoader {
 	public final static String DO_MOB_SPAWNING = "doMobSpawning";
 	public final static String NATURAL_REGENERATION = "naturalRegeneration";
 	public final static String LOCATOR_BAR = "locatorBar";
+	public final static String SPAWN_CHUNK_RADIUS = "spawnChunkRadius";
 	public final static String ANNOUNCE_ADVANCEMENTS = "announceAdvancements";
 	public final static String COMMAND_BLOCK_OUTPUT = "commandBlockOutput";
 	public final static String LOG_ADMIN_COMMANDS = "logAdminCommands";
@@ -99,14 +100,11 @@ public class MapLoader {
 
 	private void removeOceans() {
 		try {
-			if (UhcCore.getNmsAdapter().isPresent()) {
-				LOGGER.fine("Removing oceans using NMS adapter");
-				UhcCore.getNmsAdapter().get().removeOceans();
-			} else if (PaperLib.getMinecraftVersion() < 18) {
+			if (PaperLib.getMinecraftVersion() <= 16) {
 				LOGGER.fine("Removing oceans using BiomeMapping");
 				removeOceansUsingBiomeMapping();
 			} else {
-				LOGGER.warning("The 'replace-ocean-biomes' setting is not supported on this Minecraft version");
+				LOGGER.info("The 'replace-ocean-biomes' setting is not supported on Minecraft 1.17+");
 			}
 		} catch (Exception e) {
 			LOGGER.log(Level.WARNING, "Unable to remove ocean biomes", e);
@@ -391,8 +389,12 @@ public class MapLoader {
 		if (!healthRegen){
 			VersionUtils.getVersionUtils().setGameRuleValue(world, NATURAL_REGENERATION, false);
 		}
-		if (!locatorBar && PaperLib.isVersion(21, 6)) {
+		if (!locatorBar && PaperLib.isVersion(21)) {
 			VersionUtils.getVersionUtils().setGameRuleValue(world, LOCATOR_BAR, false);
+		}
+		if (PaperLib.isVersion(20, 5)) {
+			int spawnChunkRadius = config.get(MainConfig.SPAWN_CHUNK_RADIUS);
+			VersionUtils.getVersionUtils().setGameRuleValue(world, SPAWN_CHUNK_RADIUS, spawnChunkRadius);
 		}
 		if (!announceAdvancements && PaperLib.getMinecraftVersion() >= 12){
 			VersionUtils.getVersionUtils().setGameRuleValue(world, ANNOUNCE_ADVANCEMENTS, false);

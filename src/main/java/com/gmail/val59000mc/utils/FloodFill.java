@@ -35,8 +35,18 @@ public class FloodFill {
 				for (int dy = -1; dy <= 1; dy++) {
 					for (int dz = -1; dz <= 1; dz++) {
 						if (dx == 0 && dy == 0 && dz == 0) continue;
+
+						int nx = current.getX() + dx;
+						int ny = current.getY() + dy;
+						int nz = current.getZ() + dz;
+
+						// Never load chunks synchronously when traversing trees near chunk boundaries
+						if (!current.getWorld().isChunkLoaded(nx >> 4, nz >> 4)) {
+							continue;
+						}
+
 						final Block neighbor = current.getRelative(dx, dy, dz);
-						final Vector neighborPos = new Vector(neighbor.getX(), neighbor.getY(), neighbor.getZ());
+						final Vector neighborPos = new Vector(nx, ny, nz);
 						// If it's inside, mark as found and add to queue if not already found
 						if (isInside.test(neighbor) && found.add(neighborPos)) {
 							queue.add(neighbor);

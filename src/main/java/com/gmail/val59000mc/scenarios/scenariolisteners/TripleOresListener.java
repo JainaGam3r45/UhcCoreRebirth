@@ -39,12 +39,16 @@ public class TripleOresListener extends ScenarioListener {
 			int xp = oreType.get().getXpPerBlock() * 3;
 			int count = 3;
 
+			if (oreType.get() == OreType.COPPER) {
+				count = java.util.concurrent.ThreadLocalRandom.current().nextInt(2, 6) * 3;
+			}
+
 			if (OreType.isGold(type) && isEnabled(Scenario.DOUBLE_GOLD)) {
 				count *= 2;
 			}
 
 			drop = oreType.get().getDrop().getStack(count);
-			UhcItems.spawnExtraXp(loc,xp);
+			UhcItems.spawnExtraXp(loc, xp);
 		}
 
 		if (drop != null) {

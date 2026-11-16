@@ -68,10 +68,18 @@ public class VeinMinerListener extends ScenarioListener{
 		}
 
 		// Find and "mine" all surrounding blocks
-		Vein vein = new Vein(block);
+		Vein vein = new Vein(block, oreType.get());
 		vein.process();
 
 		int amount = vein.getSize() * getVeinMultiplier(blockType);
+		if (oreType.get() == OreType.COPPER) {
+			int copperTotal = 0;
+			for (int j = 0; j < vein.getSize(); j++) {
+				copperTotal += java.util.concurrent.ThreadLocalRandom.current().nextInt(2, 6);
+			}
+			amount = copperTotal * getVeinMultiplier(blockType);
+		}
+
 		ItemStack drops = oreType.get().getDrop().getStack(amount);
 		Location loc = player.getLocation().getBlock().getLocation().add(.5,.5,.5);
 		loc.getWorld().dropItem(loc, drops);
@@ -108,43 +116,43 @@ public class VeinMinerListener extends ScenarioListener{
 
 	private static class Vein {
 		private final Block startBlock;
-		private final Material type;
+		private final OreType oreType;
 		private int size;
 
-		public Vein(Block startBlock) {
+		public Vein(Block startBlock, OreType oreType) {
 			this.startBlock = startBlock;
-			this.type = startBlock.getType();
+			this.oreType = oreType;
 			size = 0;
 		}
 
 		public void process() {
-			getVeinBlocks(startBlock, type, 2, 10);
+			getVeinBlocks(startBlock, 2, 10);
 		}
 
 		public int getSize() {
 			return size;
 		}
 
-		// Finds "connected" vein blocks, excluding the start block, and "mine" them
-		private void getVeinBlocks(Block block, Material type, int i, int maxBlocks) {
+		// Finds connected vein blocks of the same OreType (handles mixed regular/deepslate veins)
+		private void getVeinBlocks(Block block, int i, int maxBlocks) {
 			if (maxBlocks == 0) return;
 
 			if (block.getType() == UniversalMaterial.GLOWING_REDSTONE_ORE.getType()) {
 				block.setType(Material.REDSTONE_ORE);
 			}
 
-			if (block.getType() == type) {
+			if (oreType.equals(block.getType())) {
 				block.setType(Material.AIR);
 				size++;
 				i = 2;
-			}else {
+			} else {
 				i--;
 			}
 
 			// Max ores per vein is 20 to avoid server lag when mining sand / gravel.
 			if (i > 0 && size < 20) {
 				for (BlockFace face : BLOCK_FACES) {
-					getVeinBlocks(block.getRelative(face), type, i, maxBlocks-1);
+					getVeinBlocks(block.getRelative(face), i, maxBlocks - 1);
 				}
 			}
 		}

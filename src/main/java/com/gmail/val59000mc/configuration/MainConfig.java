@@ -50,6 +50,7 @@ public class MainConfig extends YamlFile {
 	public static final BasicOption<Boolean> ANNOUNCE_ADVANCEMENTS = new BasicOption<>("announce-advancements", true);
 	public static final BasicOption<Boolean> ENABLE_HEALTH_REGEN = new BasicOption<>("enable-health-regen", false);
 	public static final BasicOption<Boolean> ENABLE_LOCATOR_BAR = new BasicOption<>("enable-locator-bar", false);
+	public static final BasicOption<Integer> SPAWN_CHUNK_RADIUS = new BasicOption<>("spawn-chunk-radius", 0);
 	public static final BasicOption<Integer> TIME_BEFORE_PVP = new BasicOption<>("time-before-pvp",600);
 	public static final BasicOption<Boolean> ENABLE_FRIENDLY_FIRE = new BasicOption<>("enable-friendly-fire",false);
 	public static final BasicOption<Boolean> DISABLE_ENEMY_NAMETAGS = new BasicOption<>("disable-enemy-nametags",false);

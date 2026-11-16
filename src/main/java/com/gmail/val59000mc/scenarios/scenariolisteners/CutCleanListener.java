@@ -102,12 +102,16 @@ public class CutCleanListener extends ScenarioListener{
 			int xp = oreType.get().getXpPerBlock();
 			int count = 1;
 
+			if (oreType.get() == OreType.COPPER) {
+				count = java.util.concurrent.ThreadLocalRandom.current().nextInt(2, 6);
+			}
+
 			if (OreType.isGold(type) && isEnabled(Scenario.DOUBLE_GOLD)) {
 				count *= 2;
 			}
 
 			drop = oreType.get().getDrop().getStack(count);
-			UhcItems.spawnExtraXp(loc,xp);
+			UhcItems.spawnExtraXp(loc, xp);
 		}
 
 		if (type == Material.SAND) {

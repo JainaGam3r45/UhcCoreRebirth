@@ -1,8 +1,10 @@
 package com.gmail.val59000mc.scenarios.scenariolisteners;
 
+import com.gmail.val59000mc.UhcCore;
 import com.gmail.val59000mc.configuration.MainConfig;
 import com.gmail.val59000mc.exceptions.UhcPlayerNotOnlineException;
 import com.gmail.val59000mc.game.GameManager;
+import com.gmail.val59000mc.versionadapters.adapters.GetWorldMinHeightAdapter;
 import com.gmail.val59000mc.players.PlayerState;
 import com.gmail.val59000mc.players.UhcPlayer;
 import com.gmail.val59000mc.scenarios.Option;
@@ -104,28 +106,26 @@ public class DragonRushListener extends ScenarioListener {
 
 	private Location determinePortalLocation() {
 		final World world = getGameManager().getMapLoader().getUhcWorld(World.Environment.NORMAL);
+		final int minY = UhcCore.getVersionAdapterLoader().getVersionAdapter(GetWorldMinHeightAdapter.class).getWorldMinHeight(world);
 
-		int portalY = 0;
+		int portalY = minY;
 		for (int x = -4; x < 4; x++) {
 			for (int z = -4; z < 4; z++) {
-				final int y = getHighestBlock(world, x, z);
+				final int y = getHighestBlock(world, x, z, minY);
 				if (y > portalY) {
 					portalY = y;
 				}
 			}
 		}
 
-		return new Location(world, 0, portalY+1, 0);
+		return new Location(world, 0, portalY + 1, 0);
 	}
 
-	private int getHighestBlock(World world, int x, int z) {
-		// world#getHighestBlockYAt has different behavior depending on
-		// the version, so we need our own, stable implementation.
-		// See: https://hub.spigotmc.org/jira/browse/SPIGOT-5523
-
-		// Start search at y=150 to avoid placing it on top of the glass box lobby
+	private int getHighestBlock(World world, int x, int z, int minY) {
+		// Avoid placing on the glass lobby box, but stop at world min height
+		// so 1.18+ negative coords don't spin into an infinite loop or throw.
 		int y = 150;
-		while (VersionUtils.getVersionUtils().isAir(world.getBlockAt(x, y, z).getType())) {
+		while (y > minY && VersionUtils.getVersionUtils().isAir(world.getBlockAt(x, y, z).getType())) {
 			y--;
 		}
 		return y;

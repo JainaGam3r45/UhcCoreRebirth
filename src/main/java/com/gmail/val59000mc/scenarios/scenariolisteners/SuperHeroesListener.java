@@ -33,34 +33,62 @@ public class SuperHeroesListener extends ScenarioListener{
 			return;
 		}
 
-		switch (effect){
+		PotionEffectType type;
+		int amplifier;
+
+		switch (effect) {
 			case 0:
-				forceApplyPotionEffect(player, new PotionEffect(PotionEffectType.SPEED, 999999,0));
+				type = getPotionEffectType("SPEED", "speed");
+				amplifier = 0;
 				break;
 			case 1:
-				forceApplyPotionEffect(player, new PotionEffect(PotionEffectType.INCREASE_DAMAGE, 999999,0));
+				// Paper 1.20.5+ standardized potion names, while 1.8-1.20.4 uses legacy Bukkit names
+				type = getPotionEffectType("STRENGTH", "INCREASE_DAMAGE", "strength");
+				amplifier = 0;
 				break;
 			case 2:
-				forceApplyPotionEffect(player, new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 999999,1));
+				type = getPotionEffectType("RESISTANCE", "DAMAGE_RESISTANCE", "resistance");
+				amplifier = 1;
 				break;
 			case 3:
-				forceApplyPotionEffect(player, new PotionEffect(PotionEffectType.INVISIBILITY, 999999,0));
+				type = getPotionEffectType("INVISIBILITY", "invisibility");
+				amplifier = 0;
 				break;
 			case 4:
-				forceApplyPotionEffect(player, new PotionEffect(PotionEffectType.JUMP, 999999,3));
+				type = getPotionEffectType("JUMP_BOOST", "JUMP", "jump_boost", "jump");
+				amplifier = 3;
 				break;
 			case 5:
-				forceApplyPotionEffect(player, new PotionEffect(PotionEffectType.HEALTH_BOOST, 999999, 4));
-				try {
-					uhcPlayer.healFully(); // Fill the newly added hearts
-				} catch (UhcPlayerNotOnlineException ignored) {
-					// Shouldn't happen
-				}
+				type = getPotionEffectType("HEALTH_BOOST", "health_boost");
+				amplifier = 4;
 				break;
 			default:
 				LOGGER.warning("No effect for: " + effect);
-				break;
+				return;
 		}
+
+		if (type != null) {
+			forceApplyPotionEffect(player, new PotionEffect(type, 999999, amplifier));
+			if (effect == 5) {
+				try {
+					uhcPlayer.healFully(); // Fill the newly added hearts
+				} catch (UhcPlayerNotOnlineException ignored) {
+					// Player logged out
+				}
+			}
+		} else {
+			LOGGER.warning("Could not resolve PotionEffectType for effect index: " + effect);
+		}
+	}
+
+	private PotionEffectType getPotionEffectType(String... names) {
+		for (String name : names) {
+			PotionEffectType type = PotionEffectType.getByName(name);
+			if (type != null) {
+				return type;
+			}
+		}
+		return null;
 	}
 
 	// Solution for https://gitlab.com/uhccore/uhccore/-/issues/120
