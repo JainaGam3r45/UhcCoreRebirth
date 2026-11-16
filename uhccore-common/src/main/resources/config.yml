@@ -532,8 +532,10 @@ deathmatch:
     # or caught outside the border get teleported to a safe surface spot inside it.
     surface:
       enable: false
-      # How many blocks of solid roof (or shaft walls) a player can have above them before getting pulled up.
+      # How many solid blocks a player can have above their head before getting pulled up. For shafts the
+      # walls are counted from the player's feet, so it's basically how deep they're allowed to dig.
       # Leaves, glass and water don't count, so nobody gets yanked out from under a tree or out of a lake.
+      # Minimum 1, at 0 a single branch log overhead would already count as a roof.
       max-depth: 10
       # How often, in seconds, players are checked
       check-interval: 5

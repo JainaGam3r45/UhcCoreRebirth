@@ -114,10 +114,12 @@ public class HostMenu implements InventoryHolder {
 				"Pulls players hiding underground or", "outside the border back to the surface.",
 				"Center deathmatch only, ignored", "when an arena is loaded."));
 		// MeetupSurfaceTask copies both values in its constructor, same timing as the toggle above.
-		// Depth starts at 1: the head block is always air, so 0 and 1 both trip on the block right above it.
+		// Depth starts at 1: at 0 a single branch log over someone's head counts as a roof
+		// and drags them onto the canopy, which is exactly what the rule promises not to do.
 		settings.put(33, HostSetting.integer("meetup-surface-max-depth", Material.IRON_PICKAXE, "MeetUp Max Depth", MainConfig.DEATHMATCH_SURFACE_MAX_DEPTH,
 				1, 5, 1, 64, depth -> depth + (depth == 1 ? " block" : " blocks"),
-				"Solid roof a player can have above", "them before getting pulled up.",
+				"Solid blocks a player can have over", "their head, or how deep a shaft can",
+				"go, before getting pulled up.",
 				"Only used when the surface rule is on."));
 		settings.put(34, HostSetting.seconds("meetup-surface-check-interval", Material.REDSTONE, "MeetUp Check Interval", MainConfig.DEATHMATCH_SURFACE_CHECK_INTERVAL,
 				1, 5, 1, 60,

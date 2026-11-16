@@ -43,7 +43,8 @@ public class MeetupSurfaceTask implements Runnable {
 		this.gameManager = gameManager;
 		this.world = world;
 		MainConfig config = gameManager.getConfig();
-		this.maxDepth = Math.max(0, config.get(MainConfig.DEATHMATCH_SURFACE_MAX_DEPTH));
+		// Same floor as the host menu: at 0 one branch log overhead already counts as a roof.
+		this.maxDepth = Math.max(1, config.get(MainConfig.DEATHMATCH_SURFACE_MAX_DEPTH));
 		this.checkIntervalTicks = 20 * Math.max(1, config.get(MainConfig.DEATHMATCH_SURFACE_CHECK_INTERVAL));
 	}
 
@@ -105,33 +106,35 @@ public class MeetupSurfaceTask implements Runnable {
 
 	private boolean isUnderground(Location location) {
 		int x = location.getBlockX();
+		int feetY = location.getBlockY();
 		int z = location.getBlockZ();
-		int minSolidY = location.getBlockY() + maxDepth + 1;
 
-		// Solid roof over their head: classic cave camping.
-		if (hasSolidBlockFrom(x, z, minSolidY)) {
+		// Solid roof over their head: classic cave camping. Counting blocks instead of
+		// flagging the first one is what lets a stray branch log over someone slide.
+		if (hasTooMuchCover(x, z, feetY + 2)) {
 			return true;
 		}
 
 		// Digging straight down drags the heightmap of their own column with them,
-		// so a shaft only shows up when every wall around it is still tall.
+		// so a shaft only shows up as tall walls all around. Walls count from the
+		// player's own level, which makes it plain "how deep did they dig".
 		// Requiring all four sides keeps people standing next to a cliff out of it.
-		return hasSolidBlockFrom(x + SHAFT_PROBE, z, minSolidY)
-			&& hasSolidBlockFrom(x - SHAFT_PROBE, z, minSolidY)
-			&& hasSolidBlockFrom(x, z + SHAFT_PROBE, minSolidY)
-			&& hasSolidBlockFrom(x, z - SHAFT_PROBE, minSolidY);
+		return hasTooMuchCover(x + SHAFT_PROBE, z, feetY)
+			&& hasTooMuchCover(x - SHAFT_PROBE, z, feetY)
+			&& hasTooMuchCover(x, z + SHAFT_PROBE, feetY)
+			&& hasTooMuchCover(x, z - SHAFT_PROBE, feetY);
 	}
 
 	/**
-	 * Scans the column from its heightmap top down to {@code minY}, looking for
-	 * a block that actually hides a player. Leaves, glass and water don't
-	 * occlude, so jungle canopies and lakes never count as "underground".
+	 * Counts the blocks that actually hide a player between {@code fromY} and the
+	 * column's heightmap top, bailing out once there are more than max-depth.
+	 * Leaves, glass and water don't occlude, so canopies and lakes never count.
 	 */
-	private boolean hasSolidBlockFrom(int x, int z, int minY) {
-		// The scan stops at minY, which sits above the player's feet, so no need for
-		// World#getMinHeight (1.17+) to stay clear of negative Y on modern worlds.
-		for (int y = LocationUtils.getSurfaceLevelAt(world, x, z); y >= minY; y--) {
-			if (world.getBlockAt(x, y, z).getType().isOccluding()) {
+	private boolean hasTooMuchCover(int x, int z, int fromY) {
+		int surfaceY = LocationUtils.getSurfaceLevelAt(world, x, z);
+		int cover = 0;
+		for (int y = fromY; y <= surfaceY; y++) {
+			if (world.getBlockAt(x, y, z).getType().isOccluding() && ++cover > maxDepth) {
 				return true;
 			}
 		}
