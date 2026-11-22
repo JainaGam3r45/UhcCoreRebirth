@@ -1,5 +1,25 @@
 # Changelog
 
+## [Unreleased]
+
+### New features
+
+- The Modern jar hides the red score numbers on the sidebar (Paper 1.21+).
+They only ordered the lines. Clients older than 1.20.3 joining through
+ViaBackwards still see them
+
+### Bug fixes
+
+- Hearts on the tab list and below the name stayed empty until a player's
+health changed on 1.20.3+, and the first join printed `Failed to update
+read-only health score ... CraftObjective.getHandle()` in the console. The
+workaround that fills in the starting value looked up a package-private method
+and never actually ran
+- `/iteminfo` and the item JSON export threw `IncompatibleClassChangeError` for
+items with attribute modifiers on Paper 1.21.0 and 1.21.1. Kits loaded fine
+- A `lang.yml` with the untouched old NoClean line ("... for 30 seconds!") gets
+the `%time%` version now. Edited lines stay as they are
+
 ## [1.22.1] - 2026-11-21
 
 ### Bug fixes
