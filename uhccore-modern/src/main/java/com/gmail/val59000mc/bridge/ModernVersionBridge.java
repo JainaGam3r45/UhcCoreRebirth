@@ -3,6 +3,7 @@ package com.gmail.val59000mc.bridge;
 import com.gmail.val59000mc.utils.ModernVersionUtils;
 import com.gmail.val59000mc.utils.VersionUtils;
 import java.util.UUID;
+import io.papermc.paper.scoreboard.numbers.NumberFormat;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.GameRule;
@@ -28,6 +29,8 @@ import org.bukkit.scoreboard.Team.Option;
 import org.bukkit.scoreboard.Team.OptionStatus;
 
 public class ModernVersionBridge implements VersionBridge {
+
+	private static volatile boolean numberFormatUnsupported = false;
 
 	public ModernVersionBridge() {
 		VersionUtils.setVersionUtils(new ModernVersionUtils());
@@ -98,6 +101,19 @@ public class ModernVersionBridge implements VersionBridge {
 	@Override
 	public void setTeamNameTagVisibility(Team team, boolean visible) {
 		team.setOption(Option.NAME_TAG_VISIBILITY, visible ? OptionStatus.ALWAYS : OptionStatus.NEVER);
+	}
+
+	@Override
+	public void hideScoreNumbers(Objective objective) {
+		if (numberFormatUnsupported) {
+			return;
+		}
+		try {
+			objective.numberFormat(NumberFormat.blank());
+		} catch (LinkageError e) {
+			// Paper-only API, a Spigot server running the Modern jar doesn't have it
+			numberFormatUnsupported = true;
+		}
 	}
 
 	@Override

@@ -31,6 +31,13 @@ public interface VersionBridge {
 
 	void setTeamNameTagVisibility(Team team, boolean visible);
 
+	/**
+	 * Hides the red score numbers on the right of a sidebar objective, on servers and clients that support it (1.20.3+).
+	 * The scores still decide the line order, they just stop being drawn. Does nothing elsewhere.
+	 */
+	default void hideScoreNumbers(Objective objective) {
+	}
+
 	// Entity attributes
 	void setPlayerMaxHealth(Player player, double maxHealth);
 

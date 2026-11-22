@@ -291,6 +291,7 @@ public class ScoreboardHandler {
 		objective = VersionUtils.getVersionUtils().registerNewObjective(scoreboard, "informations", "dummy");
 		objective.setDisplaySlot(DisplaySlot.SIDEBAR);
 		objective.setDisplayName(scoreboardLayout.getTitle());
+		VersionBridgeProvider.getBridge().hideScoreNumbers(objective);
 
 		int lines = scoreboardLayout.getLines(scoreboardType).size();
 
