@@ -92,7 +92,9 @@ public class ModernVersionUtils extends VersionUtils {
 
 	// Mirrors what OldEnum#name() hands out, so kit files written before this change still parse.
 	private static String getAttributeName(Attribute attribute) {
-		NamespacedKey key = attribute.getKey();
+		// Attribute turned from an enum into an interface in 1.21.2. Calling getKey() on it directly
+		// compiles to invokeinterface and blows up on 1.21.0/1.21.1, so go through Keyed, which both have.
+		NamespacedKey key = ((Keyed) attribute).getKey();
 		if (NamespacedKey.MINECRAFT.equals(key.getNamespace())) {
 			return key.getKey().toUpperCase(Locale.ROOT);
 		}
