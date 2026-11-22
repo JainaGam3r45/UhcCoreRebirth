@@ -80,10 +80,7 @@ public class ModernVersionBridge implements VersionBridge {
 
 	@Override
 	public void setReadOnlyPlayerScore(Score score, int value) {
-		try {
-			score.setScore(value);
-		} catch (Throwable ignored) {
-		}
+		ReadOnlyScoreWriter.set(score, value);
 	}
 
 	@Override

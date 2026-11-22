@@ -1,6 +1,7 @@
 package com.gmail.val59000mc.game.handlers;
 
 import com.gmail.val59000mc.UhcCore;
+import com.gmail.val59000mc.bridge.VersionBridgeProvider;
 import com.gmail.val59000mc.configuration.MainConfig;
 import com.gmail.val59000mc.exceptions.UhcPlayerNotOnlineException;
 import com.gmail.val59000mc.game.GameManager;
@@ -12,9 +13,6 @@ import com.gmail.val59000mc.tasks.UpdateScoreboardTask;
 import com.gmail.val59000mc.utils.VersionUtils;
 import com.gmail.val59000mc.versionadapters.adapters.SetTeamColorAdapter;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.bukkit.Bukkit;
@@ -182,123 +180,10 @@ public class ScoreboardHandler {
 		// The problem is that the getAbsorptionAmount API doesn't exist on older Minecraft versions (e.g. 1.8.8).
 		// We could get the absorption amount using NMS, but it should be fine to assume that they have no absorption here.
 		if (healthTab != null) {
-			setReadOnlyPlayerScore(healthTab.getScore(player.getName()), (int) player.getHealth());
+			VersionBridgeProvider.getBridge().setReadOnlyPlayerScore(healthTab.getScore(player.getName()), (int) player.getHealth());
 		}
 		if (healthBelowName != null) {
-			setReadOnlyPlayerScore(healthBelowName.getScore(player.getName()), (int) player.getHealth());
-		}
-	}
-
-	private static boolean loggedReadOnlyScoreWarning = false;
-
-	// Workaround for https://bugs.mojang.com/browse/MC-111729
-	// On 1.20.3+, vanilla made HEALTH criteria strictly read-only (MC-163943), causing score.setScore()
-	// to throw an IllegalStateException. We punch through to NMS Scoreboard via reflection to force the initial value.
-	private void setReadOnlyPlayerScore(Score score, int value) {
-		try {
-			score.setScore(value);
-		} catch (IllegalStateException e) {
-			try {
-				Object craftScoreboard = score.getScoreboard();
-				Method getHandleScoreboard = craftScoreboard.getClass().getMethod("getHandle");
-				Object nmsScoreboard = getHandleScoreboard.invoke(craftScoreboard);
-
-				Object craftObjective = score.getObjective();
-				Method getHandleObjective = craftObjective.getClass().getMethod("getHandle");
-				Object nmsObjective = getHandleObjective.invoke(craftObjective);
-
-				Method getOrCreateScore = null;
-				// Mojang keeps reshuffling this one: newer builds take (ScoreHolder, Objective, boolean),
-				// older ones (String, Objective). Obfuscated names differ too, so match on the shape.
-				for (Method m : nmsScoreboard.getClass().getMethods()) {
-					Class<?>[] params = m.getParameterTypes();
-					if (params.length == 3 && params[2] == boolean.class && params[1].isAssignableFrom(nmsObjective.getClass())) {
-						getOrCreateScore = m;
-						break;
-					}
-					if (params.length == 2 && params[1].isAssignableFrom(nmsObjective.getClass())) {
-						getOrCreateScore = m;
-						break;
-					}
-				}
-				if (getOrCreateScore == null) {
-					for (Method m : nmsScoreboard.getClass().getDeclaredMethods()) {
-						Class<?>[] params = m.getParameterTypes();
-						if (params.length == 3 && params[2] == boolean.class && params[1].isAssignableFrom(nmsObjective.getClass())) {
-							m.setAccessible(true);
-							getOrCreateScore = m;
-							break;
-						}
-						if (params.length == 2 && params[1].isAssignableFrom(nmsObjective.getClass())) {
-							m.setAccessible(true);
-							getOrCreateScore = m;
-							break;
-						}
-					}
-				}
-
-				if (getOrCreateScore != null) {
-					Class<?> holderParam = getOrCreateScore.getParameterTypes()[0];
-					Object holder;
-					if (holderParam == String.class) {
-						holder = score.getEntry();
-					} else {
-						holder = Proxy.newProxyInstance(
-								holderParam.getClassLoader(),
-								new Class<?>[]{holderParam},
-								(proxy, method, args) -> {
-									if (method.getReturnType() == String.class) {
-										return score.getEntry();
-									}
-									if ("equals".equals(method.getName()) && args != null && args.length == 1) {
-										return proxy == args[0];
-									}
-									if ("hashCode".equals(method.getName())) {
-										return score.getEntry().hashCode();
-									}
-									if ("toString".equals(method.getName())) {
-										return score.getEntry();
-									}
-									return null;
-								}
-						);
-					}
-
-					Object scoreAccess;
-					if (getOrCreateScore.getParameterCount() == 3) {
-						scoreAccess = getOrCreateScore.invoke(nmsScoreboard, holder, nmsObjective, true);
-					} else {
-						scoreAccess = getOrCreateScore.invoke(nmsScoreboard, holder, nmsObjective);
-					}
-
-					boolean scoreSet = false;
-					for (Method m : scoreAccess.getClass().getMethods()) {
-						if ((m.getReturnType() == void.class || m.getReturnType() == int.class)
-								&& m.getParameterCount() == 1
-								&& m.getParameterTypes()[0] == int.class) {
-							m.invoke(scoreAccess, value);
-							scoreSet = true;
-							break;
-						}
-					}
-					if (!scoreSet) {
-						for (Method m : scoreAccess.getClass().getDeclaredMethods()) {
-							if ((m.getReturnType() == void.class || m.getReturnType() == int.class)
-									&& m.getParameterCount() == 1
-									&& m.getParameterTypes()[0] == int.class) {
-								m.setAccessible(true);
-								m.invoke(scoreAccess, value);
-								break;
-							}
-						}
-					}
-				}
-			} catch (Exception ex) {
-				if (!loggedReadOnlyScoreWarning) {
-					loggedReadOnlyScoreWarning = true;
-					LOGGER.log(Level.WARNING, "Failed to update read-only health score on scoreboard via reflection (suppressing further warnings): " + ex.getMessage());
-				}
-			}
+			VersionBridgeProvider.getBridge().setReadOnlyPlayerScore(healthBelowName.getScore(player.getName()), (int) player.getHealth());
 		}
 	}
 
