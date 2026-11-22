@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.22.1] - 2026-11-21
+
+### Bug fixes
+
+- With Chunky-Paper 1.5+ installed, the server kept kicking players with the
+`kick.loading` message after pre-generation finished. Chunky-Paper reports the
+finished world as a namespaced key (`minecraft:<world>`) and UhcCore only
+accepted the plain world name, so it never noticed the world was ready. Both
+forms are accepted now. Older Chunky-Bukkit builds keep working as before
+
 ## [1.22.0] - 2026-11-16
 
 UhcCore Rebirth `1.22.0` splits the plugin into two jars and adds a batch of
