@@ -501,6 +501,13 @@ public class Lang{
 		SCENARIO_BOWLESS_ERROR = getString(lang, "scenarios.bowless.error", "&4[Bowless] &cYou can't craft bows!");
 		SCENARIO_HASTEY_BOYS_GRINDSTONE_ERROR = getString(lang, "scenarios.hastey_boys.grindstone-error", "&4[Hastey Boys] &cYou may not disenchant \"Hastey Boys\" tools.");
 		SCENARIO_HORSELESS_ERROR = getString(lang, "scenarios.horseless.error", "&4[Horseless] &cYou can't ride that horse!");
+		// The old default had the duration baked in. NoClean lasts 20 seconds by default now, so a lang.yml that
+		// still carries the untouched old line would announce the wrong time. Customised lines are left alone.
+		String noCleanPath = "scenarios.no_clean.invulnerable";
+		if ("&4[NoClean] &aYou are now invulnerable for 30 seconds!".equals(lang.getString(noCleanPath))) {
+			lang.set(noCleanPath, "&4[NoClean] &aYou are now invulnerable for %time% seconds!");
+			pathChanges = true;
+		}
 		SCENARIO_NOCLEAN_INVULNERABLE = getString(lang, "scenarios.no_clean.invulnerable", "&4[NoClean] &aYou are now invulnerable for %time% seconds!");
 		SCENARIO_NOCLEAN_VULNERABLE = getString(lang, "scenarios.no_clean.vulnerable", "&4[NoClean] &cYou can now take damage again!");
 		SCENARIO_NOCLEAN_ERROR = getString(lang, "scenarios.no_clean.error", "&4[NoClean] &cYou can't damage this player!");
