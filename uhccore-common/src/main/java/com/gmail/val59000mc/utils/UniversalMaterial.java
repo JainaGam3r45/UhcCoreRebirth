@@ -476,8 +476,8 @@ public enum UniversalMaterial {
 		if (!resolved) {
 			resolved = true;
 			try {
-				// Use matchMaterial defensively so running on 1.8-1.12 fossils won't throw
-				// unhandled IllegalArgumentExceptions when modern blocks are checked.
+				// matchMaterial returns null for unknown names instead of throwing,
+				// which is what we want on 1.8-1.12 when a modern block gets asked for.
 				if (VersionUtils.isAtLeast(13)) {
 					material = Material.matchMaterial(name13);
 					if (material == null && name8 != null) {
@@ -490,7 +490,7 @@ public enum UniversalMaterial {
 					}
 				}
 			} catch (Exception ignored) {
-				// Prevent classloader / version detection edge cases on obscure forks
+				// Odd forks can throw here, in that case the material just stays null.
 			}
 		}
 
@@ -574,7 +574,6 @@ public enum UniversalMaterial {
 			return false;
 		}
 
-		// Covers all vanilla logs, nether stems, and bamboo blocks across versions
 		return material == UniversalMaterial.OAK_LOG.getType()
 			|| material == UniversalMaterial.SPRUCE_LOG.getType()
 			|| material == UniversalMaterial.BIRCH_LOG.getType()
@@ -606,7 +605,7 @@ public enum UniversalMaterial {
 			return false;
 		}
 
-		// Covers 6-sided bark wood blocks and hyphae variants introduced in 1.13+
+		// Bark on all six sides, plus the hyphae variants (all 1.13+)
 		return material == UniversalMaterial.OAK_WOOD.getType()
 			|| material == UniversalMaterial.SPRUCE_WOOD.getType()
 			|| material == UniversalMaterial.BIRCH_WOOD.getType()
@@ -661,7 +660,6 @@ public enum UniversalMaterial {
 			return false;
 		}
 
-		// Covers all normal, deepslate, and nether ore variants across supported versions
 		return material == UniversalMaterial.COAL_ORE.getType()
 			|| material == UniversalMaterial.DEEPSLATE_COAL_ORE.getType()
 			|| material == UniversalMaterial.IRON_ORE.getType()

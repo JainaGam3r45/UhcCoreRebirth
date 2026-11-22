@@ -31,7 +31,7 @@ public class UpdateChecker {
 				URL url = new URL(API_URL);
 				HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 				conn.setRequestMethod("GET");
-				// GitHub API strictly requires a User-Agent header; drops 403 otherwise
+				// GitHub answers 403 to requests without a User-Agent
 				conn.setRequestProperty("User-Agent", "UhcCoreRebirth-UpdateChecker");
 				conn.setRequestProperty("Accept", "application/vnd.github.v3+json");
 				conn.setConnectTimeout(5000);
@@ -100,7 +100,7 @@ public class UpdateChecker {
 		String cleanRemote = remoteTag.startsWith("v") || remoteTag.startsWith("V") ? remoteTag.substring(1) : remoteTag;
 		String cleanCurrent = currentVersion.startsWith("v") || currentVersion.startsWith("V") ? currentVersion.substring(1) : currentVersion;
 
-		// Strip commit hashes or SNAPSHOT tags for base semantic version check
+		// Drop suffixes like -SNAPSHOT or a commit hash, only x.y.z gets compared
 		String cleanCurrentBase = cleanCurrent.split("-")[0];
 		String cleanRemoteBase = cleanRemote.split("-")[0];
 
@@ -115,7 +115,7 @@ public class UpdateChecker {
 			if (r < c) return false;
 		}
 
-		// If numerical version is identical, a release tag is newer than a dev snapshot
+		// Same x.y.z: the release is newer than a SNAPSHOT of it
 		return currentVersion.contains("SNAPSHOT") && !remoteTag.contains("SNAPSHOT");
 	}
 

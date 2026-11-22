@@ -128,7 +128,7 @@ public enum OreType {
 		if (material == null) {
 			return false;
 		}
-		// Guard against nulls when running on legacy versions where modern ores don't exist
+		// Deepslate and the other modern ores are null on old versions
 		return (normal != null && normal == material) || (deepslate != null && deepslate == material);
 	}
 
