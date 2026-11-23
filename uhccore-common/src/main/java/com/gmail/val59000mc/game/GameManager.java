@@ -32,6 +32,7 @@ import com.gmail.val59000mc.tasks.PreStartTask;
 import com.gmail.val59000mc.tasks.StopRestartTask;
 import com.gmail.val59000mc.tasks.TimeBeforeDeathmatchTask;
 import com.gmail.val59000mc.utils.*;
+import com.gmail.val59000mc.versionadapters.PreGenerationProgress;
 import com.gmail.val59000mc.versionadapters.adapters.ChunkyPreGenerator;
 
 import org.apache.commons.lang.Validate;
@@ -261,16 +262,26 @@ public class GameManager{
 			final ChunkyPreGenerator chunkyPreGenerator = UhcCore.getVersionAdapterLoader().getVersionAdapter(ChunkyPreGenerator.class);
 			if (chunkyPreGenerator != null) {
 				final List<CompletableFuture<Void>> preGenerationTasks = new ArrayList<>();
+				final PreGenerationProgress progress = mapLoader.getPreGenerationProgress();
 
 				final World overworld = mapLoader.getUhcWorld(Environment.NORMAL);
 				final int overworldSize = config.get(MainConfig.BORDER_START_SIZE);
-				preGenerationTasks.add(chunkyPreGenerator.preGenerateChunks(overworld.getName(), overworldSize));
+				// Tracked before either task starts: Chunky runs both worlds at once, and the
+				// overworld has to stay "current" until it's done.
+				progress.track(overworld.getName(), Environment.NORMAL, PreGenerationProgress.countChunksInSquare(overworldSize));
 
+				World nether = null;
+				int netherSize = 0;
 				if (config.get(MainConfig.ENABLE_NETHER)) {
-					final World nether = mapLoader.getUhcWorld(Environment.NETHER);
+					nether = mapLoader.getUhcWorld(Environment.NETHER);
 					final double netherScale = config.get(MainConfig.NETHER_SCALE);
-					final int netherSize = (int) (overworldSize / netherScale);
-					preGenerationTasks.add(chunkyPreGenerator.preGenerateChunks(nether.getName(), netherSize));
+					netherSize = (int) (overworldSize / netherScale);
+					progress.track(nether.getName(), Environment.NETHER, PreGenerationProgress.countChunksInSquare(netherSize));
+				}
+
+				preGenerationTasks.add(chunkyPreGenerator.preGenerateChunks(overworld.getName(), overworldSize, progress));
+				if (nether != null) {
+					preGenerationTasks.add(chunkyPreGenerator.preGenerateChunks(nether.getName(), netherSize, progress));
 				}
 
 				CompletableFuture.allOf(preGenerationTasks.stream().toArray(CompletableFuture[]::new))

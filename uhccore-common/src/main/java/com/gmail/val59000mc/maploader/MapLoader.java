@@ -46,6 +46,7 @@ import com.gmail.val59000mc.tasks.ChunkLoaderTask;
 import com.gmail.val59000mc.tasks.WorldBorderTask;
 import com.gmail.val59000mc.utils.FileUtils;
 import com.gmail.val59000mc.utils.VersionUtils;
+import com.gmail.val59000mc.versionadapters.PreGenerationProgress;
 import com.gmail.val59000mc.versionadapters.adapters.SetBiomeProviderAdapter;
 import com.pieterdebot.biomemapping.Biome;
 import com.pieterdebot.biomemapping.BiomeMappingAPI;
@@ -71,6 +72,7 @@ public class MapLoader {
 	// Where each world actually landed on disk, as written to storage.yml. Paper 26+ keeps
 	// worlds under world/dimensions/<namespace>/ instead of the world container root.
 	private final Map<Environment, String> worldFolders;
+	private final PreGenerationProgress preGenerationProgress;
 
 	private Lobby lobby;
 	private DeathmatchArena arena;
@@ -82,8 +84,13 @@ public class MapLoader {
 		this.config = config;
 		worldUuids = new HashMap<>();
 		worldFolders = new HashMap<>();
+		preGenerationProgress = new PreGenerationProgress();
 		mapSeed = -1;
 		mapName = null;
+	}
+
+	public PreGenerationProgress getPreGenerationProgress() {
+		return preGenerationProgress;
 	}
 
 	public Lobby getLobby() {
@@ -751,7 +758,7 @@ public class MapLoader {
 		int restEveryNumOfChunks = config.get(MainConfig.REST_EVERY_NUM_OF_CHUNKS);
 		int restDuration = config.get(MainConfig.REST_DURATION);
 
-		ChunkLoaderTask chunkLoaderTask = new ChunkLoaderTask(world, size, restEveryNumOfChunks, restDuration) {
+		ChunkLoaderTask chunkLoaderTask = new ChunkLoaderTask(world, size, restEveryNumOfChunks, restDuration, preGenerationProgress) {
 			@Override
 			public void onDoneLoadingWorld() {
 				LOGGER.info("Environment "+env.toString()+" 100% loaded");

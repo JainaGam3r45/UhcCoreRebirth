@@ -28,7 +28,7 @@ public class PingListener implements Listener{
 				event.setMotd(Lang.DISPLAY_MOTD_ENDED);
 				break;
 			case LOADING:
-				event.setMotd(Lang.DISPLAY_MOTD_LOADING);
+				event.setMotd(Lang.formatLoadingMessage(Lang.DISPLAY_MOTD_LOADING, gm.getMapLoader().getPreGenerationProgress().getCurrent()));
 				break;
 			case DEATHMATCH:
 			case PLAYING:

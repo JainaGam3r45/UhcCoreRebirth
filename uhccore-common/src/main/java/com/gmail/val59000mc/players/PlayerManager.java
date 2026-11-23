@@ -62,7 +62,7 @@ public class PlayerManager {
 
 		switch(gm.getGameState()){
 			case LOADING:
-				throw new UhcPlayerJoinException(Lang.KICK_LOADING);
+				throw new UhcPlayerJoinException(Lang.formatLoadingMessage(Lang.KICK_LOADING, gm.getMapLoader().getPreGenerationProgress().getCurrent()));
 
 			case WAITING:
 				return true;

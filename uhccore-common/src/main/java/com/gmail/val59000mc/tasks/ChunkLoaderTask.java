@@ -1,6 +1,7 @@
 package com.gmail.val59000mc.tasks;
 
 import com.gmail.val59000mc.UhcCore;
+import com.gmail.val59000mc.versionadapters.PreGenerationProgress;
 import io.papermc.lib.PaperLib;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
@@ -21,9 +22,15 @@ public abstract class ChunkLoaderTask implements Runnable {
 	private int x, z;
 	private final int totalChunksToLoad;
 	private int chunksLoaded;
+	private final PreGenerationProgress progress;
 
 	public ChunkLoaderTask(World world, int size, int restEveryNumOfChunks, int restDuration) {
+		this(world, size, restEveryNumOfChunks, restDuration, null);
+	}
+
+	public ChunkLoaderTask(World world, int size, int restEveryNumOfChunks, int restDuration, PreGenerationProgress progress) {
 		this.world = world;
+		this.progress = progress;
 		this.restEveryNumOfChunks = restEveryNumOfChunks;
 		this.restDuration = restDuration;
 
@@ -33,6 +40,10 @@ public abstract class ChunkLoaderTask implements Runnable {
 
 		x = -maxChunk;
 		z = -maxChunk;
+
+		if (progress != null) {
+			progress.track(world.getName(), world.getEnvironment(), totalChunksToLoad);
+		}
 	}
 
 	/**
@@ -76,6 +87,9 @@ public abstract class ChunkLoaderTask implements Runnable {
 		}
 
 		chunksLoaded += loaded;
+		if (progress != null) {
+			progress.update(world.getName(), chunksLoaded, -1);
+		}
 
 		// Cancel world generation if the plugin has been disabled.
 		if (!UhcCore.getPlugin().isEnabled()) {
@@ -95,6 +109,9 @@ public abstract class ChunkLoaderTask implements Runnable {
 		}
 		// Done loading all chunks
 		else{
+			if (progress != null) {
+				progress.complete(world.getName());
+			}
 			Bukkit.getScheduler().runTask(UhcCore.getPlugin(), this::onDoneLoadingWorld);
 		}
 	}

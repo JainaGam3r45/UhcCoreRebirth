@@ -4,25 +4,34 @@ import com.gmail.val59000mc.UhcCore;
 import com.gmail.val59000mc.configuration.YamlFile;
 import com.gmail.val59000mc.scenarios.Scenario;
 import com.gmail.val59000mc.utils.FileUtils;
+import com.gmail.val59000mc.versionadapters.PreGenerationProgress;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import org.apache.commons.lang.Validate;
 import org.bukkit.ChatColor;
+import org.bukkit.World.Environment;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
 
+import javax.annotation.Nullable;
 import java.io.*;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class Lang{
 
 	private static final Logger LOGGER = Logger.getLogger(Lang.class.getCanonicalName());
+
+	private static final String DEFAULT_MOTD_LOADING = "&eGenerating %world%: &a%progress%%";
+	private static final String DEFAULT_KICK_LOADING = "Generating the %world%: %progress%% (%chunks%/%total_chunks% chunks). Please retry in a few minutes.";
 
 	public static String GAME_ENOUGH_TEAMS_READY;
 	public static String GAME_STARTING;
@@ -62,6 +71,9 @@ public class Lang{
 	public static String DISPLAY_SPECTATOR_CHAT;
 	public static String DISPLAY_TEAM_CHAT;
 	public static String DISPLAY_MOTD_LOADING;
+	public static String DISPLAY_LOADING_WORLD_OVERWORLD;
+	public static String DISPLAY_LOADING_WORLD_NETHER;
+	public static String DISPLAY_LOADING_WORLD_END;
 	public static String DISPLAY_MOTD_WAITING;
 	public static String DISPLAY_MOTD_STARTING;
 	public static String DISPLAY_MOTD_PLAYING;
@@ -304,14 +316,20 @@ public class Lang{
 		DISPLAY_EPISODE_MARK = getString(lang, "display.episode-mark", "End of episode %episode%!");
 		DISPLAY_SPECTATOR_CHAT = getString(lang, "display.spectator-chat", "&7[Spec] &r%player%&r: %message%");
 		DISPLAY_TEAM_CHAT = getString(lang, "display.team-chat", "&a[Team] &r%player%&r: %message%");
-		DISPLAY_MOTD_LOADING = getString(lang, "display.motd-loading", "Loading ...");
+		// Untouched old defaults get the version with progress placeholders, edited lines stay as they are.
+		pathChanges |= replaceOldDefault(lang, "display.motd-loading", "Loading ...", DEFAULT_MOTD_LOADING);
+		pathChanges |= replaceOldDefault(lang, "kick.loading", "Loading. Please retry in a few minutes.", DEFAULT_KICK_LOADING);
+		DISPLAY_MOTD_LOADING = getString(lang, "display.motd-loading", DEFAULT_MOTD_LOADING);
+		DISPLAY_LOADING_WORLD_OVERWORLD = getString(lang, "display.loading-world-overworld", "Overworld");
+		DISPLAY_LOADING_WORLD_NETHER = getString(lang, "display.loading-world-nether", "Nether");
+		DISPLAY_LOADING_WORLD_END = getString(lang, "display.loading-world-end", "End");
 		DISPLAY_MOTD_WAITING = getString(lang, "display.motd-waiting", "Waiting ...");
 		DISPLAY_MOTD_STARTING = getString(lang, "display.motd-starting", "Starting");
 		DISPLAY_MOTD_PLAYING = getString(lang, "display.motd-playing", "Playing");
 		DISPLAY_MOTD_ENDED = getString(lang, "display.motd-ended", "Ended");
 
 		// Kick
-		KICK_LOADING = getString(lang, "kick.loading", "Loading. Please retry in a few minutes.");
+		KICK_LOADING = getString(lang, "kick.loading", DEFAULT_KICK_LOADING);
 		KICK_STARTING = getString(lang, "kick.starting", "Starting ... Too late to join.");
 		KICK_PLAYING = getString(lang, "kick.playing", "Playing ... You can't join.");
 		KICK_ENDED = getString(lang, "kick.ended", "Ended ... Please retry in a few minutes.");
@@ -534,6 +552,49 @@ public class Lang{
 				LOGGER.log(Level.WARNING, "Unable to save lang.yml", ex);
 			}
 		}
+	}
+
+	private boolean replaceOldDefault(FileConfiguration lang, String path, String oldDefault, String newDefault) {
+		if (oldDefault.equals(lang.getString(path))) {
+			lang.set(path, newDefault);
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Fills the pre-generation placeholders of a loading message: %progress% (alias %percent%),
+	 * %world%, %chunks% and %total_chunks%. Shows zeros and "-" while nothing is being generated.
+	 */
+	public static String formatLoadingMessage(String message, @Nullable PreGenerationProgress.WorldProgress progress) {
+		String percent = "0";
+		String world = "-";
+		String chunks = "0";
+		String totalChunks = "0";
+
+		if (progress != null) {
+			percent = new DecimalFormat("0.#", DecimalFormatSymbols.getInstance(Locale.ROOT)).format(progress.getPercent());
+			world = getWorldDisplayName(progress.getEnvironment());
+			chunks = String.valueOf(progress.getChunks());
+			totalChunks = String.valueOf(progress.getTotalChunks());
+		}
+
+		return message
+			.replace("%progress%", percent)
+			.replace("%percent%", percent)
+			.replace("%world%", world)
+			.replace("%total_chunks%", totalChunks)
+			.replace("%chunks%", chunks);
+	}
+
+	private static String getWorldDisplayName(Environment environment) {
+		if (environment == Environment.NETHER) {
+			return DISPLAY_LOADING_WORLD_NETHER;
+		}
+		if (environment == Environment.THE_END) {
+			return DISPLAY_LOADING_WORLD_END;
+		}
+		return DISPLAY_LOADING_WORLD_OVERWORLD;
 	}
 
 	private String getString(FileConfiguration lang, String path, String def, int maxLenth){

@@ -7,6 +7,7 @@ import java.util.logging.Logger;
 import org.bukkit.Bukkit;
 import org.popcraft.chunky.api.ChunkyAPI;
 
+import com.gmail.val59000mc.versionadapters.PreGenerationProgress;
 import com.gmail.val59000mc.versionadapters.adapters.ChunkyPreGenerator;
 import com.google.auto.service.AutoService;
 
@@ -22,11 +23,26 @@ public class ChunkyPreGeneratorImpl implements ChunkyPreGenerator {
 
 	@Override
 	public CompletableFuture<Void> preGenerateChunks(String world, int size) {
+		return preGenerateChunks(world, size, null);
+	}
+
+	@Override
+	public CompletableFuture<Void> preGenerateChunks(String world, int size, PreGenerationProgress progress) {
 		final CompletableFuture<Void> generationComplete = new CompletableFuture<>();
 		final ChunkyAPI chunky = Bukkit.getServer().getServicesManager().load(ChunkyAPI.class);
 
+		if (progress != null) {
+			chunky.onGenerationProgress(e -> {
+				if (isSameWorld(e.world(), world)) {
+					progress.update(world, e.chunks(), e.progress());
+				}
+			});
+		}
 		chunky.onGenerationComplete(e -> {
 			if (isSameWorld(e.world(), world)) {
+				if (progress != null) {
+					progress.complete(world);
+				}
 				generationComplete.complete(null);
 			} else {
 				LOGGER.fine("Ignoring Chunky completion for " + e.world() + ", waiting for " + world);
