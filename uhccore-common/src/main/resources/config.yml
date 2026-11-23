@@ -685,6 +685,7 @@ scatter:
   - ICE_PLAINS
   - SNOWY_TUNDRA
   - SNOWY_PLAINS
+  - ICE_PLAINS_SPIKES
   - ICE_SPIKES
   # Minimum distance in blocks between two teams' spawn points. 0 disables it.
   # Relaxed automatically when the border is too small to fit every team this far apart.
