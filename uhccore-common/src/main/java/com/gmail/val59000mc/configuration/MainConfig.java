@@ -133,6 +133,13 @@ public class MainConfig extends YamlFile {
 	public static final BasicOption<Integer> BORDER_END_SIZE = new BasicOption<>("border.end-size",0);
 	public static final BasicOption<Integer> BORDER_TIME_BEFORE_SHRINK = new BasicOption<>("border.time-before-shrink",0);
 
+	// Border warning
+	public static final BasicOption<Boolean> ENABLE_BORDER_WARNING = new BasicOption<>("border-warning.enable", true);
+	public static final BasicOption<Integer> BORDER_WARNING_DISTANCE = new BasicOption<>("border-warning.warning-distance", 30);
+	public static final BasicOption<Integer> BORDER_WARNING_DANGER_DISTANCE = new BasicOption<>("border-warning.danger-distance", 10);
+	public static final BasicOption<String> BORDER_WARNING_DISPLAY = new BasicOption<>("border-warning.display", "ACTIONBAR");
+	public static final BasicOption<Boolean> BORDER_WARNING_SOUND = new BasicOption<>("border-warning.sound", true);
+
 	// Deathmatch
 	public static final BasicOption<Boolean> ENABLE_DEATHMATCH = new BasicOption<>("deathmatch.enable",true);
 	public static final BasicOption<Integer> DEATHMATCH_DELAY = new BasicOption<>("deathmatch.delay", BORDER_TIME_TO_SHRINK);

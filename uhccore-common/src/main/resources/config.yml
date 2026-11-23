@@ -493,6 +493,21 @@ border:
   #If moving is set to true, the time in seconds for the border before it starts moving
   time-before-shrink: 0
 
+# Warns players getting close to the world border, in every UHC world, for the whole game (deathmatch included).
+# Texts are in lang.yml under 'border-warning' (%distance% = blocks to the border).
+border-warning:
+  enable: true
+  # Distance in blocks from the border where the warning shows up
+  warning-distance: 30
+  # Distance in blocks where it turns into a danger alert (red, plus the beeps below)
+  danger-distance: 10
+  # How the warning is shown: ACTIONBAR, BOSSBAR, CHAT or TITLE
+  # CHAT only posts when a player crosses into the warning or danger zone, so it doesn't flood the chat.
+  # On 1.8, ACTIONBAR and BOSSBAR fall back to TITLE.
+  display: ACTIONBAR
+  # Beep inside the danger distance. The beeps get faster and higher pitched the closer the player gets.
+  sound: true
+
 
 # Setting up the deathmatch
 deathmatch:

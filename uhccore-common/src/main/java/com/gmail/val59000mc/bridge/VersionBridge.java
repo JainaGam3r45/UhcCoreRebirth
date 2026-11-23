@@ -65,6 +65,27 @@ public interface VersionBridge {
 	// Chat and Action bar
 	void sendActionBar(Player player, String message);
 
+	/**
+	 * Shows a title and subtitle.
+	 *
+	 * @return false when the server has no title API at all, so the caller can fall back to chat
+	 */
+	@SuppressWarnings("deprecation")
+	default boolean sendTitle(Player player, String title, String subtitle, int fadeIn, int stay, int fadeOut) {
+		try {
+			player.sendTitle(title, subtitle, fadeIn, stay, fadeOut);
+			return true;
+		} catch (NoSuchMethodError e) {
+			// 1.8.8 - 1.10 only have the two argument version with fixed timings
+			try {
+				player.sendTitle(title, subtitle);
+				return true;
+			} catch (NoSuchMethodError unsupported) {
+				return false;
+			}
+		}
+	}
+
 	// Block manipulation
 	boolean hasEndPortalEye(Block block);
 

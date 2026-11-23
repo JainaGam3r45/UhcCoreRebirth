@@ -22,6 +22,7 @@ import com.gmail.val59000mc.scenarios.ScenarioManager;
 import com.gmail.val59000mc.scenarios.scenariolisteners.TimebombListener;
 import com.gmail.val59000mc.scoreboard.ScoreboardLayout;
 import com.gmail.val59000mc.scoreboard.ScoreboardManager;
+import com.gmail.val59000mc.tasks.BorderWarningTask;
 import com.gmail.val59000mc.tasks.ElapsedTimeTask;
 import com.gmail.val59000mc.tasks.EnablePVPTask;
 import com.gmail.val59000mc.tasks.EnablePermanentDayTask;
@@ -338,6 +339,10 @@ public class GameManager{
 
 		if (config.get(MainConfig.ENABLE_EPISODE_MARKERS)){
 			Bukkit.getScheduler().runTaskAsynchronously(UhcCore.getPlugin(), new EpisodeMarkersTask(this));
+		}
+
+		if (config.get(MainConfig.ENABLE_BORDER_WARNING)) {
+			new BorderWarningTask(this).start();
 		}
 
 		if(config.get(MainConfig.ENABLE_DEATHMATCH)){

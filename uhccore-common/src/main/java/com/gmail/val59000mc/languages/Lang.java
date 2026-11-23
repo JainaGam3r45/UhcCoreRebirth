@@ -44,6 +44,8 @@ public class Lang{
 	public static String GAME_STARTING_DEATHMATCH_IN;
 	public static String GAME_START_DEATHMATCH;
 	public static String GAME_BORDER_START_SHRINKING;
+	public static String BORDER_WARNING_NEAR;
+	public static String BORDER_WARNING_DANGER;
 	public static String GAME_MEETUP_SURFACE_ENABLED;
 	public static String GAME_MEETUP_PULLED_TO_SURFACE;
 	public static String GAME_FINAL_HEAL;
@@ -289,6 +291,8 @@ public class Lang{
 		GAME_STARTING_DEATHMATCH_IN = getString(lang, "game.starting-deathmatch-in", "Starting deathmatch in %time% seconds.");
 		GAME_START_DEATHMATCH = getString(lang, "game.start-deathmatch", "Starting the deathmatch! Prepare yourself until PVP is enabled!");
 		GAME_BORDER_START_SHRINKING = getString(lang, "game.border-start-shrinking", "The border will now begin to shrink");
+		BORDER_WARNING_NEAR = getString(lang, "border-warning.near", "&eThe border is &6%distance% &eblocks away");
+		BORDER_WARNING_DANGER = getString(lang, "border-warning.danger", "&c&lDANGER! &cThe border is only %distance% blocks away!");
 		GAME_MEETUP_SURFACE_ENABLED = getString(lang, "game.meetup-surface-enabled", "Stay on the surface and inside the border! Anyone hiding underground will be brought back up.");
 		GAME_MEETUP_PULLED_TO_SURFACE = getString(lang, "game.meetup-pulled-to-surface", "No hiding during the meetup! You have been moved back to the surface.");
 		GAME_FINAL_HEAL = getString(lang, "game.final-heal", "All players have been healed to full health");
