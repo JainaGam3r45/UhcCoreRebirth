@@ -5,6 +5,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.World.Environment;
+import org.bukkit.WorldBorder;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 
@@ -137,15 +138,23 @@ public class LocationUtils {
 	}
 
 	public static boolean isWithinBorder(Location loc){
-		double border = loc.getWorld().getWorldBorder().getSize()/2;
+		return getDistanceToBorder(loc) > 0;
+	}
 
-		int x = loc.getBlockX();
-		int z = loc.getBlockZ();
+	/**
+	 * Blocks between the location and the closest edge of its world's border, negative once outside.
+	 * Measured from the border center, which only sits at 0,0 until an arena deathmatch or the
+	 * moving deathmatch zone shifts it.
+	 */
+	public static double getDistanceToBorder(Location loc) {
+		return getDistanceToBorder(loc.getWorld().getWorldBorder(), loc.getX(), loc.getZ());
+	}
 
-		if (x < 0) x = -x;
-		if (z < 0) z = -z;
-
-		return x < border && z < border;
+	public static double getDistanceToBorder(WorldBorder border, double x, double z) {
+		Location center = border.getCenter();
+		double apothem = border.getSize() / 2;
+		// The border is a square, so the closest wall is decided by the larger axis offset.
+		return apothem - Math.max(Math.abs(x - center.getX()), Math.abs(z - center.getZ()));
 	}
 
 	/**

@@ -12,10 +12,15 @@ import com.gmail.val59000mc.scoreboard.placeholders.BlocksToTeamLeader;
 import com.gmail.val59000mc.scoreboard.placeholders.ScenariosPlaceholder;
 import com.gmail.val59000mc.scoreboard.placeholders.TeamMembersPlaceholder;
 import com.gmail.val59000mc.scoreboard.placeholders.TimersPlaceholder;
+import com.gmail.val59000mc.utils.LocationUtils;
 import com.gmail.val59000mc.utils.TimeUtils;
+import com.gmail.val59000mc.utils.VersionUtils;
 import me.clip.placeholderapi.PlaceholderAPI;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.World;
+import org.bukkit.World.Environment;
+import org.bukkit.WorldBorder;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
@@ -25,6 +30,12 @@ import java.util.logging.Logger;
 public class ScoreboardManager {
 
 	private static final Logger LOGGER = Logger.getLogger(ScoreboardManager.class.getCanonicalName());
+
+	// Anything bigger is the vanilla ~30M default (or a world nobody configured), not a UHC border.
+	private static final int MAX_UHC_BORDER_APOTHEM = 50000;
+	// Prefix + suffix: 16 + 16 before the 1.13 scoreboard rewrite, 64 + 64 after it.
+	private static final int MAX_LEGACY_LINE_LENGTH = 32;
+	private static final int MAX_MODERN_LINE_LENGTH = 128;
 
 	private final ScoreboardHandler scoreboardHandler;
 	private final ScoreboardLayout scoreboardLayout;
@@ -79,27 +90,7 @@ public class ScoreboardManager {
 		}
 
 		if (returnString.contains("%border%")){
-			int size = (int) bukkitPlayer.getWorld().getWorldBorder().getSize() / 2;
-			String borderString = "+" + size + " -" + size;
-
-			int playerX = bukkitPlayer.getLocation().getBlockX();
-			int playerZ = bukkitPlayer.getLocation().getBlockZ();
-
-			if (playerX < 0) playerX *= -1;
-			if (playerZ < 0) playerZ *= -1;
-
-			int distanceX = size - playerX;
-			int distanceZ = size - playerZ;
-
-			if (distanceX <= 5 || distanceZ <= 5){
-				borderString = ChatColor.RED + borderString;
-			}else if (distanceX <= 50 || distanceZ <= 50){
-				borderString = ChatColor.YELLOW + borderString;
-			}else {
-				borderString = ChatColor.GREEN + borderString;
-			}
-
-			returnString = returnString.replace("%border%",borderString);
+			returnString = returnString.replace("%border%", getBorderString(gm, cfg, bukkitPlayer));
 		}
 
 		if (returnString.contains("%ylayer%")){
@@ -180,11 +171,46 @@ public class ScoreboardManager {
 			returnString = PlaceholderAPI.setPlaceholders(bukkitPlayer, returnString);
 		}
 
-		if (returnString.length() > 32){
-			LOGGER.warning("Scoreboard line is too long: '" + returnString + "'!");
-			returnString = "";
+		if (!VersionUtils.isAtLeast(13)) {
+			if (returnString.length() > MAX_LEGACY_LINE_LENGTH){
+				LOGGER.warning("Scoreboard line is too long: '" + returnString + "'!");
+				returnString = "";
+			}
+		} else if (returnString.length() > MAX_MODERN_LINE_LENGTH) {
+			returnString = returnString.substring(0, MAX_MODERN_LINE_LENGTH);
 		}
 		return returnString;
+	}
+
+	/**
+	 * Always reads the main UHC world: players in the lobby world (or anywhere without a border)
+	 * used to get the vanilla ~30M border, which blew the 16 char limit on 1.8 every second.
+	 */
+	private String getBorderString(GameManager gm, MainConfig cfg, Player bukkitPlayer) {
+		World uhcWorld = gm.getMapLoader() == null ? null : gm.getMapLoader().getUhcWorld(Environment.NORMAL);
+		int apothem = uhcWorld == null ? -1 : (int) (uhcWorld.getWorldBorder().getSize() / 2);
+
+		if (apothem <= 0 || apothem > MAX_UHC_BORDER_APOTHEM) {
+			int configuredApothem = cfg.get(MainConfig.BORDER_START_SIZE);
+			return configuredApothem > 0 ? ChatColor.GREEN + "+" + configuredApothem + " -" + configuredApothem : "-";
+		}
+
+		String borderString = "+" + apothem + " -" + apothem;
+
+		// Colored by the border the player is actually standing in, the nether one is scaled down.
+		World playerWorld = bukkitPlayer.getWorld();
+		if (!gm.getMapLoader().isUhcWorld(playerWorld)) {
+			return ChatColor.GREEN + borderString;
+		}
+		WorldBorder playerBorder = playerWorld.getWorldBorder();
+		double distance = LocationUtils.getDistanceToBorder(playerBorder, bukkitPlayer.getLocation().getX(), bukkitPlayer.getLocation().getZ());
+
+		if (distance <= 5){
+			return ChatColor.RED + borderString;
+		}else if (distance <= 50){
+			return ChatColor.YELLOW + borderString;
+		}
+		return ChatColor.GREEN + borderString;
 	}
 
 	/**

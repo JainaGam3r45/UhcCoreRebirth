@@ -94,6 +94,21 @@ public class MapLoader {
 		return arena;
 	}
 
+	/**
+	 * @return true if the world is one of the current game's worlds (overworld, nether or end)
+	 */
+	public boolean isUhcWorld(@Nullable World world) {
+		if (world == null) {
+			return false;
+		}
+		for (Environment env : Environment.values()) {
+			if (world.equals(getUhcWorld(env))) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	public double getOverworldBorderApothem(){
 		World overworld = GameManager.getGameManager().getMapLoader().getUhcWorld(World.Environment.NORMAL);
 		return overworld.getWorldBorder().getSize()/2;

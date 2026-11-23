@@ -25,6 +25,9 @@ public class ScoreboardHandler {
 	private static final Logger LOGGER = Logger.getLogger(ScoreboardHandler.class.getCanonicalName());
 
 	private static final String COLOR_CHAR = String.valueOf(ChatColor.COLOR_CHAR);
+	// Team prefix/suffix cap: 16 chars up to 1.12. From 1.13 Spigot allows 64 and throws above that.
+	private static final int LEGACY_TEAM_AFFIX_LENGTH = 16;
+	private static final int MODERN_TEAM_AFFIX_LENGTH = 64;
 	public static final String[] SCOREBOARD_LINES = new String[] {
 			ChatColor.UNDERLINE + "" + ChatColor.RESET,
 			ChatColor.ITALIC + "" + ChatColor.RESET,
@@ -313,6 +316,9 @@ public class ScoreboardHandler {
 			return;
 		}
 
+		boolean legacy = !VersionUtils.isAtLeast(13);
+		int maxLength = legacy ? LEGACY_TEAM_AFFIX_LENGTH : MODERN_TEAM_AFFIX_LENGTH;
+
 		int i = 0;
 		for (String line : scoreboardLayout.getLines(scoreboardType)){
 
@@ -323,22 +329,22 @@ public class ScoreboardHandler {
 
 				String translatedLine = scoreboardManager.translatePlaceholders(line, uhcPlayer, player);
 
-				if (translatedLine.length() <= 16){
+				if (translatedLine.length() <= maxLength){
 					first = translatedLine;
 				}else {
 
-					int split = 16;
+					int split = maxLength;
 
 					first = translatedLine.substring(0, split);
 					boolean copyColor = true;
 
 					if (first.endsWith(COLOR_CHAR)){
 						copyColor = false;
-						split = 15;
+						split = maxLength - 1;
 						first = translatedLine.substring(0, split);
 
-						if (first.substring(0, 14).endsWith(COLOR_CHAR)){
-							split = 13;
+						if (first.substring(0, maxLength - 2).endsWith(COLOR_CHAR)){
+							split = maxLength - 3;
 							first = translatedLine.substring(0, split);
 						}
 					}
@@ -349,9 +355,17 @@ public class ScoreboardHandler {
 
 					second += translatedLine.substring(split);
 
-					if (second.length() > 16){
-						LOGGER.warning("Scoreboard line is too long: '" + translatedLine + "'!");
-						second = "";
+					if (second.length() > maxLength){
+						if (legacy) {
+							LOGGER.warning("Scoreboard line is too long: '" + translatedLine + "'!");
+							second = "";
+						} else {
+							// 1.13+ only gets here past 128 chars, cutting it beats a spammed console.
+							second = second.substring(0, maxLength);
+							if (second.endsWith(COLOR_CHAR)) {
+								second = second.substring(0, maxLength - 1);
+							}
+						}
 					}
 				}
 			}
