@@ -24,9 +24,8 @@ public interface VersionBridge {
 
 	/**
 	 * Creator for a UHC world, keyed {@code uhccore:<path>} where the server has world keys (Paper 1.16.5+),
-	 * a plain one otherwise. Don't assume {@code creator.name()} equals the path: Paper 26.x registers a
-	 * namespaced world as {@code <namespace>_<path>}, and {@code name()} is the only place that says so
-	 * before the world exists.
+	 * a plain one otherwise. Ask {@code creator.name()} for the world name instead of assuming it equals
+	 * the path: Paper 26.x registers a namespaced world as {@code <namespace>_<path>}.
 	 */
 	default WorldCreator createUhcWorldCreator(String path) {
 		return new WorldCreator(path);

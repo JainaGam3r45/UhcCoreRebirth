@@ -79,7 +79,9 @@ public class ModernVersionBridge implements VersionBridge {
 	@Override
 	public String getWorldKey(WorldCreator creator) {
 		try {
-			return creator.key().toString();
+			String key = creator.key().toString();
+			// A plain creator has a minecraft: key too, that one isn't ours to store.
+			return key.startsWith(UHC_WORLD_NAMESPACE + ":") ? key : null;
 		} catch (NoSuchMethodError e) {
 			return null;
 		}

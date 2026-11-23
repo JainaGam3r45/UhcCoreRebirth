@@ -48,7 +48,11 @@ public class DefaultVersionBridge implements VersionBridge {
 		findWorldKeyApi();
 		if (worldCreatorKey != null) {
 			try {
-				return String.valueOf(worldCreatorKey.invoke(creator));
+				Object key = worldCreatorKey.invoke(creator);
+				// A plain creator has a minecraft: key too, that one isn't ours to store.
+				if (key != null && key.toString().startsWith(UHC_WORLD_NAMESPACE + ":")) {
+					return key.toString();
+				}
 			} catch (ReflectiveOperationException | RuntimeException e) {
 				LOGGER.log(Level.FINE, "Unable to read the world key", e);
 			}
@@ -67,6 +71,7 @@ public class DefaultVersionBridge implements VersionBridge {
 				worldCreatorOfKey = WorldCreator.class.getMethod("ofKey", NamespacedKey.class);
 				worldCreatorKey = WorldCreator.class.getMethod("key");
 			} catch (NoSuchMethodException ignored) {
+				// ofKey without key() would leave us half-wired, so drop both
 				worldCreatorOfKey = null;
 				worldCreatorKey = null;
 			}

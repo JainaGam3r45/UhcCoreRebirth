@@ -306,9 +306,8 @@ public class GameManager{
 		}
 	}
 
-	/**
-	 * Chunky-Paper resolves worlds by key, which for our plain-named worlds is minecraft:<name>.
-	 */
+	// Chunky-Paper wants the world key, minecraft:<name> for plain-named worlds.
+
 	private List<String> getChunkyIds(Environment environment, World world) {
 		String key = mapLoader.getUhcWorldKey(environment);
 		return Collections.singletonList(key != null ? key : "minecraft:" + world.getName());

@@ -70,12 +70,6 @@ public class ChunkyPreGeneratorImpl implements ChunkyPreGenerator {
 		return generationComplete;
 	}
 
-	/**
-	 * Chunky-Bukkit reports worlds by plain name ("uhc_nether"), while Chunky-Paper 1.5+
-	 * reports the namespaced key ("minecraft:uhc_nether"). Paper lowercases key paths, so the
-	 * comparison ignores case. We can't ask the world for its key here: this adapter also
-	 * ships in the Legacy jar, where World#getKey doesn't exist.
-	 */
 	static boolean isSameWorld(String chunkyWorld, List<String> worldIds) {
 		for (String worldId : worldIds) {
 			if (isSameWorld(chunkyWorld, worldId)) {
@@ -85,6 +79,12 @@ public class ChunkyPreGeneratorImpl implements ChunkyPreGenerator {
 		return false;
 	}
 
+	/**
+	 * Chunky-Bukkit reports worlds by plain name ("uhc_nether"), while Chunky-Paper 1.5+
+	 * reports the namespaced key ("minecraft:uhc_nether"). Paper lowercases key paths, so the
+	 * comparison ignores case. We can't ask the world for its key here: this adapter also
+	 * ships in the Legacy jar, where World#getKey doesn't exist.
+	 */
 	static boolean isSameWorld(String chunkyWorld, String worldName) {
 		if (chunkyWorld == null || worldName == null) {
 			return false;

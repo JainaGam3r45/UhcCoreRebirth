@@ -68,8 +68,7 @@ public class MapLoader {
 	private static final String MINECRAFT_NAMESPACE = "minecraft";
 
 	private final MainConfig config;
-	// Bukkit's name for each world, which is what every lookup uses. Usually the folder name, but a
-	// namespaced world on Paper 26.x is registered as <namespace>_<path>.
+	// Name Bukkit registers each world under, which is what every lookup uses.
 	private final Map<Environment, String> worldNames;
 	// Key of each world ("uhccore:<path>"), null for plain-named ones.
 	private final Map<Environment, String> worldKeys;
@@ -262,8 +261,8 @@ public class MapLoader {
 		WorldCreator wc = copyMapFromList
 			? new WorldCreator(worldPath)
 			: VersionBridgeProvider.getBridge().createUhcWorldCreator(worldPath);
-		// Not worldPath: Paper 26.x registers uhccore:<path> as uhccore_<path>. WorldInitEvent and every
-		// getUhcWorld lookup need this exact name, and it only fires during createWorld below.
+		// Not worldPath: Paper 26.x registers uhccore:<path> as uhccore_<path>. WorldInitEvent fires
+		// inside createWorld, so the name has to be known before that.
 		String worldName = wc.name();
 		String worldKey = copyMapFromList ? null : VersionBridgeProvider.getBridge().getWorldKey(wc);
 		wc.generateStructures(config.get(MainConfig.GENERATE_STRUCTURES));
@@ -337,8 +336,7 @@ public class MapLoader {
 		LOGGER.info("World seed: " + createdWorld.getSeed());
 
 		if (!worldName.equals(createdWorld.getName())) {
-			// Shouldn't happen since the name comes from the creator, but a fork could rename worlds
-			// differently. Better to keep finding the world than to throw on the first lookup.
+			// Trust what Bukkit actually registered.
 			LOGGER.warning("World " + worldName + " was registered as " + createdWorld.getName() + ", using that name");
 			worldNames.put(env, createdWorld.getName());
 		}
@@ -371,21 +369,20 @@ public class MapLoader {
 	}
 
 	public void loadOldWorld(Environment env){
-		String uuid = worldNames.get(env);
+		String worldName = worldNames.get(env);
 
-		if(!isUsableWorldName(uuid)){
+		if(!isUsableWorldName(worldName)){
 			LOGGER.info("No world to load, defaulting to default behavior");
 			this.createNewWorld(env);
 		}else{
 			final String key = worldKeys.get(env);
-			final List<File> worldDirs = findWorldFolders(uuid, key, worldFolders.get(env));
+			final List<File> worldDirs = findWorldFolders(worldName, key, worldFolders.get(env));
 			if(!worldDirs.isEmpty()){
 				LOGGER.info("Loading existing world : " + worldDirs.get(0).getPath());
-				// Has to be opened under the key it was created with, or Paper 26.x looks in another
-				// dimensions folder and generates a brand new world.
+				// Same key as at creation, otherwise 26.x looks in another folder and generates a new world.
 				WorldCreator creator = key == null
-					? new WorldCreator(uuid)
-					: VersionBridgeProvider.getBridge().createUhcWorldCreator(getKeyPath(key, uuid));
+					? new WorldCreator(worldName)
+					: VersionBridgeProvider.getBridge().createUhcWorldCreator(getKeyPath(key, worldName));
 				World loadedWorld = Bukkit.getServer().createWorld(creator.environment(env));
 				LOGGER.info("World seed: " + loadedWorld.getSeed());
 				worldNames.put(env, loadedWorld.getName());
@@ -568,7 +565,8 @@ public class MapLoader {
 	}
 
 	/**
-	 * The part of the key after the namespace, which is the folder name under {@code dimensions/<namespace>/}.
+	 * Folder name under {@code dimensions/<namespace>/}. Falls back to the world name if a hand-edited
+	 * storage.yml has a key we can't use.
 	 */
 	private static String getKeyPath(@Nullable String worldKey, String worldName) {
 		if (worldKey == null) {
@@ -603,8 +601,7 @@ public class MapLoader {
 	}
 
 	/**
-	 * Used to obtain the UHC world name matching the given environment, as Bukkit knows it. Despite the
-	 * method name that is not always a bare uuid: Paper 26.x registers a namespaced world as {@code uhccore_<uuid>}.
+	 * Bukkit name of the UHC world matching the given environment, e.g. {@code uhccore_<uuid>} on Paper 26.x.
 	 * @param environment The environment of the world name you want to obtain.
 	 * @return Returns the UHC world name matching the environment or null if it doesn't exist.
 	 */
@@ -623,12 +620,12 @@ public class MapLoader {
 	public World getUhcWorld(Environment environment){
 		Validate.notNull(environment);
 
-		String worldUuid = worldNames.get(environment);
-		if (worldUuid == null){
+		String worldName = worldNames.get(environment);
+		if (worldName == null){
 			return null;
 		}
 
-		return Bukkit.getWorld(worldUuid);
+		return Bukkit.getWorld(worldName);
 	}
 
 	public void setWorldsStartGame() {
