@@ -176,8 +176,12 @@ public class YamlFile extends YamlConfiguration {
 		if (comment != null)
 			res.append(comment);
 
+		// Spigot 1.18+ already keeps comments and blank lines when saving, and the comment blocks above bring
+		// their own blank lines back too. Without this every save that added a key doubled the gaps.
+		String content = res.toString().replaceAll("\n{3,}", "\n\n").replaceFirst("^\n+", "");
+
 		BufferedWriter out = new BufferedWriter(new FileWriter(configFile, false));
-		out.write(res.toString());
+		out.write(content);
 		out.close();
 		r_from.close();
 		r_new.close();
