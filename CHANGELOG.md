@@ -4,16 +4,23 @@
 
 ### Bug fixes
 
-- 1.22.3 never got out of LOADING on Paper/Purpur 26.x and threw a
-`NullPointerException` in `GameManager.loadNewGame`. It created the UHC worlds
-under the `uhccore` namespace, 26.x registers those as `uhccore_<uuid>`, and
-the plugin looks its worlds up by the plain `<uuid>` name, so the overworld came
-back null. Worlds use plain names again. The folder cleanup stays: it finds
-worlds under `world/dimensions/minecraft`, and the first start on 1.22.4 removes
-what 1.22.3 left in `world/dimensions/uhccore`
+- 1.22.3 did not work on Paper/Purpur 26.x. 26.x registers worlds in the
+`uhccore` namespace as `uhccore_<uuid>`, the plugin looked them up by `<uuid>`,
+and the overworld came back null (`NullPointerException` in
+`GameManager.loadNewGame`, server stuck in LOADING). Worlds keep the `uhccore`
+namespace (`world/dimensions/uhccore/<uuid>` on 26.x). The name is read from
+`WorldCreator#name()` before the world is created, `storage.yml` also stores
+`world-keys`, Chunky is matched by key (`uhccore:<uuid>`) as well as by name,
+and debug mode reopens worlds under their key
+- The startup cleanup of leftover worlds looked in the wrong folder on 26.x. It
+now removes everything in `world/dimensions/uhccore` that is not loaded, plus
+UUID-named worlds with a `level.dat` or `region` folder in
+`world/dimensions/minecraft`. Vanilla dimensions, other plugins' dimensions and
+UUID folders with no world inside are left alone. The first start after
+updating also removes what 1.22.3 left behind
 - Every save that added new keys to `config.yml` doubled the blank lines
-between settings. Saves keep the gaps as they are now, and an already doubled
-file gets collapsed the next time the plugin saves it
+between settings. An already doubled file gets collapsed the next time the
+plugin saves it
 
 ## [1.22.3] - 2026-11-22
 
