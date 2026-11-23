@@ -19,6 +19,7 @@ import com.gmail.val59000mc.scenarios.Scenario;
 import com.gmail.val59000mc.scenarios.scenariolisteners.TimebombListener;
 import com.gmail.val59000mc.scoreboard.ScoreboardType;
 import com.gmail.val59000mc.tasks.CheckRemainingPlayerTask;
+import com.gmail.val59000mc.tasks.ChunkLoaderTask;
 import com.gmail.val59000mc.tasks.TeleportPlayersTask;
 import com.gmail.val59000mc.tasks.TimeBeforeSendBungeeTask;
 import com.gmail.val59000mc.utils.*;
@@ -34,6 +35,7 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
 import java.util.*;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -460,16 +462,54 @@ public class PlayerManager {
 			}
 		}
 
-		for(UhcTeam team : listUhcTeams()){
-			Location newLoc = LocationUtils.getRandomSpawnLocation(world, maxDistance);
-			team.setStartingLocation(newLoc);
+		List<UhcTeam> teams = listUhcTeams();
+		BiomeBlacklist biomes = BiomeBlacklist.fromConfig();
+		double minDistance = gm.getConfig().get(MainConfig.SCATTER_MIN_DISTANCE_BETWEEN_TEAMS);
+
+		if (ChunkLoaderTask.canRunOffMainThread()) {
+			assignStartingLocationsAsync(world, maxDistance, biomes, minDistance, teams, 0, new ArrayList<>());
+			return;
 		}
+
+		List<Location> takenSpawns = new ArrayList<>();
+		for(UhcTeam team : teams){
+			Location newLoc = LocationUtils.getRandomSpawnLocation(world, maxDistance, biomes, takenSpawns, minDistance);
+			team.setStartingLocation(newLoc);
+			takenSpawns.add(newLoc);
+		}
+		teleportTeams(teams);
+	}
+
+	/**
+	 * One team at a time, so each search knows where the previous teams landed (min distance).
+	 * The chunk reads happen off the main thread, see {@link AsyncSpawnSearch}.
+	 */
+	private void assignStartingLocationsAsync(World world, int maxDistance, BiomeBlacklist biomes, double minDistance,
+											  List<UhcTeam> teams, int index, List<Location> takenSpawns) {
+		if (index >= teams.size()) {
+			teleportTeams(teams);
+			return;
+		}
+
+		AsyncSpawnSearch.find(world, maxDistance, biomes, takenSpawns, minDistance).whenComplete((spawn, error) -> MainThread.execute(() -> {
+			Location newLoc = spawn;
+			if (newLoc == null) {
+				LOGGER.log(Level.WARNING, "Async spawn search failed, searching synchronously", error);
+				newLoc = LocationUtils.getRandomSpawnLocation(world, maxDistance, biomes, takenSpawns, minDistance);
+			}
+			teams.get(index).setStartingLocation(newLoc);
+			takenSpawns.add(newLoc);
+			assignStartingLocationsAsync(world, maxDistance, biomes, minDistance, teams, index + 1, takenSpawns);
+		}));
+	}
+
+	private void teleportTeams(List<UhcTeam> teams) {
+		GameManager gm = GameManager.getGameManager();
 
 		Bukkit.getPluginManager().callEvent(new UhcPreTeleportEvent());
 
-		long delayTeleportByTeam = 0;
-
-		for(UhcTeam team : listUhcTeams()){
+		List<UhcTeam> scatteredTeams = new ArrayList<>();
+		for(UhcTeam team : teams){
 
 			if (team.isSpectating()){
 				gm.getPlayerManager().setPlayerSpectateAtLobby(team.getLeader());
@@ -482,14 +522,30 @@ public class PlayerManager {
 					clearPlayerInventory(uhcPlayer.getPlayer());
 				} catch (UhcPlayerNotOnlineException ignored) {}
 			}
+			scatteredTeams.add(team);
+		}
 
-			Bukkit.getScheduler().runTaskLater(UhcCore.getPlugin(), new TeleportPlayersTask(GameManager.getGameManager(), team), delayTeleportByTeam);
+		// The game starts once the last team has landed. Teleports wait for their chunk on Paper,
+		// so a fixed delay could flip the game to PLAYING while teams are still in the lobby.
+		final int[] teamsInFlight = {scatteredTeams.size()};
+		final Runnable startGameWhenEveryoneLanded = () -> Bukkit.getScheduler().runTaskLater(UhcCore.getPlugin(),
+			() -> GameManager.getGameManager().startWatchingEndOfGame(), 20);
+		if (scatteredTeams.isEmpty()) {
+			startGameWhenEveryoneLanded.run();
+			return;
+		}
+
+		long delayTeleportByTeam = 0;
+		for (UhcTeam team : scatteredTeams) {
+			Runnable onTeleported = () -> {
+				if (--teamsInFlight[0] == 0) {
+					startGameWhenEveryoneLanded.run();
+				}
+			};
+			Bukkit.getScheduler().runTaskLater(UhcCore.getPlugin(), new TeleportPlayersTask(gm, team, onTeleported), delayTeleportByTeam);
 			LOGGER.info("Teleporting a team in "+delayTeleportByTeam+" ticks");
 			delayTeleportByTeam += gm.getConfig().get(MainConfig.DELAY_BETWEEN_TEAM_TELEPORTS); // ticks
 		}
-
-		Bukkit.getScheduler().runTaskLater(UhcCore.getPlugin(), () -> GameManager.getGameManager().startWatchingEndOfGame(), delayTeleportByTeam + 20);
-
 	}
 
 	public void strikeLightning(UhcPlayer uhcPlayer) {

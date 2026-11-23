@@ -9,13 +9,19 @@ import org.bukkit.WorldBorder;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 
-import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Logger;
 
 public class LocationUtils {
 
 	private static final Logger LOGGER = Logger.getLogger(LocationUtils.class.getCanonicalName());
+
+	private static final int MAX_SPAWN_ATTEMPTS = 500;
+	// Budget for each relaxed retry, taken out of MAX_SPAWN_ATTEMPTS so a hopeless map costs what it always did.
+	private static final int RELAXED_SPAWN_ATTEMPTS = 100;
+	private static final int MAX_SPAWN_Y = 200; // Workaround to stop people from spawning on top of lobby
 
 	/**
 	 * Returns a copy of the specified location, with the yaw and pitch
@@ -170,28 +176,47 @@ public class LocationUtils {
 	 * @return the random spawn location
 	 */
 	public static Location getRandomSpawnLocation(World world, int maxDistance) {
-		final int maxAttempts = 500;
-		final int[] failedAttempts = new int[2 * maxAttempts];
-		final int maxY = 200; // Workaround to stop people from spawning on top of lobby
+		return getRandomSpawnLocation(world, maxDistance, BiomeBlacklist.fromConfig(), Collections.<Location>emptyList(), 0);
+	}
 
-		// Try to find safe spawn location at random
-		for (int i = 0; i < maxAttempts; i++) {
-			final int x = ThreadLocalRandom.current().nextInt(-maxDistance, maxDistance);
-			final int z = ThreadLocalRandom.current().nextInt(-maxDistance, maxDistance);
-			final Block safeSpawn = findSafeSpawnAt(world, x, z);
-			if (safeSpawn != null && safeSpawn.getY() < maxY) {
-				return safeSpawn.getLocation().add(0.5, 1, 0.5);
-			}
+	/**
+	 * Returns a random spawn location that avoids blacklisted biomes and keeps its distance from other spawns.
+	 *
+	 * <p>
+	 *     When nothing fits, the rules get relaxed one at a time: first the biome blacklist
+	 *     goes, then the minimum distance, and only then a blind random spot like before.
+	 * </p>
+	 *
+	 * @param world the world to spawn in
+	 * @param maxDistance the maximum allowed distance from the world origin in the X or Z direction
+	 * @param blacklist biomes to stay out of, only applied in the overworld
+	 * @param otherSpawns spawn points already handed out (e.g. other teams)
+	 * @param minDistance minimum horizontal distance from every point in {@code otherSpawns}, 0 to disable
+	 * @return the random spawn location
+	 */
+	public static Location getRandomSpawnLocation(World world, int maxDistance, BiomeBlacklist blacklist, Collection<Location> otherSpawns, double minDistance) {
+		BiomeBlacklist biomes = world.getEnvironment() == Environment.NORMAL ? blacklist : BiomeBlacklist.empty();
+		boolean spreadOut = minDistance > 0 && !otherSpawns.isEmpty();
 
-			// Save location of failed attempt for debugging purposes
-			failedAttempts[2*i] = x;
-			failedAttempts[2*i + 1] = z;
+		int relaxedPasses = (biomes.isEmpty() ? 0 : 1) + (spreadOut ? 1 : 0);
+		Location spawn = searchSpawn(world, maxDistance, biomes, otherSpawns, minDistance, MAX_SPAWN_ATTEMPTS - relaxedPasses * RELAXED_SPAWN_ATTEMPTS);
+
+		if (spawn == null && !biomes.isEmpty()) {
+			LOGGER.info("No spawn found outside the blacklisted biomes, ignoring the blacklist for this one");
+			biomes = BiomeBlacklist.empty();
+			spawn = searchSpawn(world, maxDistance, biomes, otherSpawns, minDistance, RELAXED_SPAWN_ATTEMPTS);
+		}
+		if (spawn == null && spreadOut) {
+			LOGGER.info("No spawn found " + minDistance + " blocks away from the others, the border is probably too small for that many teams");
+			spawn = searchSpawn(world, maxDistance, biomes, otherSpawns, 0, RELAXED_SPAWN_ATTEMPTS);
+		}
+		if (spawn != null) {
+			return spawn;
 		}
 
 		// Otherwise, log failure and just pick a completely random location
 		LOGGER.warning("Unable to find a safe spawn location");
 		LOGGER.warning("World seed: " + world.getSeed());
-		LOGGER.warning("failedAttempts: " + Arrays.toString(failedAttempts));
 
 		final int x = ThreadLocalRandom.current().nextInt(-maxDistance, maxDistance);
 		final int z = ThreadLocalRandom.current().nextInt(-maxDistance, maxDistance);
@@ -235,7 +260,8 @@ public class LocationUtils {
 							|| Math.abs(columnZ + 0.5 - center.getZ()) > maxCenterOffset) {
 						continue;
 					}
-					final Block safeSpot = findSafeSpawnAt(world, columnX, columnZ);
+					// No biome blacklist here: being pulled out of a cave into a desert beats staying stuck.
+					final Block safeSpot = findSafeSpawnAt(world, columnX, columnZ, BiomeBlacklist.empty());
 					if (safeSpot != null && safeSpot.getY() + 1 >= minY) {
 						return safeSpot.getLocation().add(0.5, 1, 0.5);
 					}
@@ -245,7 +271,55 @@ public class LocationUtils {
 		return null;
 	}
 
-	private static Block findSafeSpawnAt(World world, int x, int z) {
+	private static Location searchSpawn(World world, int maxDistance, BiomeBlacklist biomes, Collection<Location> otherSpawns, double minDistance, int attempts) {
+		for (int i = 0; i < attempts; i++) {
+			final int x = ThreadLocalRandom.current().nextInt(-maxDistance, maxDistance);
+			final int z = ThreadLocalRandom.current().nextInt(-maxDistance, maxDistance);
+			// Distance first: it's free, while the surface lookup may load (and on 1.8 populate) chunks.
+			if (isTooClose(world, x, z, otherSpawns, minDistance)) {
+				continue;
+			}
+			final Location spawn = getSafeSpawnLocationAt(world, x, z, biomes);
+			if (spawn != null) {
+				return spawn;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * @return a location standing on a safe block in the given column, or {@code null} if the column isn't safe
+	 */
+	public static Location getSafeSpawnLocationAt(World world, int x, int z, BiomeBlacklist biomes) {
+		final Block safeSpawn = findSafeSpawnAt(world, x, z, biomes);
+		if (safeSpawn != null && safeSpawn.getY() < MAX_SPAWN_Y) {
+			return safeSpawn.getLocation().add(0.5, 1, 0.5);
+		}
+		return null;
+	}
+
+	/**
+	 * @return true if the column is closer than {@code minDistance} (horizontally) to any of the spawns in the same world
+	 */
+	public static boolean isTooClose(World world, double x, double z, Collection<Location> otherSpawns, double minDistance) {
+		if (minDistance <= 0) {
+			return false;
+		}
+		final double minDistanceSquared = minDistance * minDistance;
+		for (Location other : otherSpawns) {
+			if (other == null || !world.equals(other.getWorld())) {
+				continue;
+			}
+			final double dx = other.getX() - x;
+			final double dz = other.getZ() - z;
+			if (dx * dx + dz * dz < minDistanceSquared) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private static Block findSafeSpawnAt(World world, int x, int z, BiomeBlacklist biomes) {
 		// On Minecraft 1.8 - 1.12, World#getHighestBlockYAt and
 		// Location#getBlock does not wait for the chunk to become fully
 		// populated, which means that the returned surface block might
@@ -277,6 +351,9 @@ public class LocationUtils {
 			return null;
 		} else {
 			final Block candidate = getSurfaceBlockAt(world, x, z);
+			if (biomes.isBlacklisted(candidate)) {
+				return null;
+			}
 			if (isSafeToSpawnOn(candidate)) {
 				return candidate;
 			} else {

@@ -2,11 +2,13 @@ package com.gmail.val59000mc.bridge;
 
 import com.gmail.val59000mc.utils.ModernVersionUtils;
 import com.gmail.val59000mc.utils.VersionUtils;
+import java.util.Locale;
 import java.util.UUID;
 import io.papermc.paper.scoreboard.numbers.NumberFormat;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.GameRule;
+import org.bukkit.Keyed;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
@@ -160,6 +162,19 @@ public class ModernVersionBridge implements VersionBridge {
 			skull.setItemMeta(meta);
 		}
 		return skull;
+	}
+
+	@Override
+	public String getBiomeName(Block block) {
+		// Biome went from enum to registry interface in 1.21.3. Calling through Keyed links
+		// against both, a plain Biome#name() call breaks on one side of that change.
+		Keyed biome = block.getBiome();
+		try {
+			return biome.getKey().getKey().toUpperCase(Locale.ROOT);
+		} catch (RuntimeException e) {
+			// Biome.CUSTOM on 1.21.0 - 1.21.2 has no key
+			return "CUSTOM";
+		}
 	}
 
 	@Override

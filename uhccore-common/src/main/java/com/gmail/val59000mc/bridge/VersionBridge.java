@@ -86,6 +86,13 @@ public interface VersionBridge {
 		}
 	}
 
+	/**
+	 * Upper case biome name of the block, as used by the scatter biome blacklist ("DESERT", "SNOWY_PLAINS", ...).
+	 */
+	default String getBiomeName(Block block) {
+		return block.getBiome().name();
+	}
+
 	// Block manipulation
 	boolean hasEndPortalEye(Block block);
 

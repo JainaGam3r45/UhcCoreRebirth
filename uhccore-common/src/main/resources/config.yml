@@ -673,6 +673,23 @@ custom-events:
 # Can be increased as an attempt to prevent the server from freezing due to the large amount of chunk loads at once.
 delay-between-team-teleports: 10
 
+# Where teams land when the game starts (also used for the center deathmatch, late scatters and revives).
+scatter:
+  # Teams never spawn in these biomes (overworld only). Use the biome names of your server version:
+  # ICE_PLAINS on 1.8 - 1.12, SNOWY_TUNDRA on 1.13 - 1.17, SNOWY_PLAINS on 1.18+. Listing all of them is fine.
+  # A leading or trailing * matches anything, '*OCEAN' covers every ocean type.
+  # If no spot outside these biomes can be found, the blacklist gets ignored instead of failing the scatter.
+  blacklisted-biomes:
+  - '*OCEAN'
+  - DESERT
+  - ICE_PLAINS
+  - SNOWY_TUNDRA
+  - SNOWY_PLAINS
+  - ICE_SPIKES
+  # Minimum distance in blocks between two teams' spawn points. 0 disables it.
+  # Relaxed automatically when the border is too small to fit every team this far apart.
+  min-distance-between-teams: 100
+
 # When set to true, the plugin won't delete the last world, it will just load it. It will also ignore the map pre-generator.
 # This is to allow fast-configuration, to avoid creating new worlds when you only want to configure some other features.
 debug: false
