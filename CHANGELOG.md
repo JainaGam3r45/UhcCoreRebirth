@@ -1,5 +1,40 @@
 # Changelog
 
+## [1.22.3] - 2026-11-22
+
+### New features
+
+- Border warning (`border-warning`): action bar, boss bar, title or chat when a
+player gets close to the border, plus beeps that speed up near the wall
+- Moving safe zone for the center deathmatch
+(`deathmatch.center-deathmatch.moving-zone`, off by default). The border
+shrinks in phases and its center drifts, with the next zone announced ahead
+- Scatter biome blacklist and minimum distance between teams (`scatter`). Both
+get relaxed when the border is too small, so the scatter never fails
+- The loading MOTD and `kick.loading` accept `%progress%`, `%world%`,
+`%chunks%` and `%total_chunks%`
+
+### Bug fixes
+
+- 1.13+ froze for a few seconds at startup with the `Initializing Legacy
+Material Support` warning. Custom crafts no longer call `ItemStack#getData()`
+- Old UHC worlds piled up under `world/dimensions/` on newer Paper builds.
+Worlds now use the `uhccore` namespace, their folder goes to `storage.yml`, and
+leftovers are cleaned on startup
+- `Scoreboard line is too long` spam for `%border%` outside the UHC worlds. The
+16/32 char limits only apply on 1.8 - 1.12 now
+- The server could stay in LOADING forever when Chunky couldn't find the world
+
+### Other
+
+- On Paper (26.x included) scatter chunks load off the main thread
+
+### Upgrading
+
+- Existing configs get `border-warning` enabled and
+`scatter.min-distance-between-teams: 0`. Copy the `scatter` section from a
+fresh `config.yml` to get the biome blacklist
+
 ## [1.22.2] - 2026-11-22
 
 ### New features
