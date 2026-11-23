@@ -30,7 +30,7 @@ public class Lang{
 
 	private static final Logger LOGGER = Logger.getLogger(Lang.class.getCanonicalName());
 
-	private static final String DEFAULT_MOTD_LOADING = "&eGenerating %world%: &a%progress%%";
+	private static final String DEFAULT_MOTD_LOADING = "&eGenerating the %world%: &a%progress%%";
 	private static final String DEFAULT_KICK_LOADING = "Generating the %world%: %progress%% (%chunks%/%total_chunks% chunks). Please retry in a few minutes.";
 
 	public static String GAME_ENOUGH_TEAMS_READY;
@@ -296,7 +296,7 @@ public class Lang{
 		GAME_BORDER_START_SHRINKING = getString(lang, "game.border-start-shrinking", "The border will now begin to shrink");
 		BORDER_WARNING_NEAR = getString(lang, "border-warning.near", "&eThe border is &6%distance% &eblocks away");
 		BORDER_WARNING_DANGER = getString(lang, "border-warning.danger", "&c&lDANGER! &cThe border is only %distance% blocks away!");
-		DEATHMATCH_ZONE_NEXT = getString(lang, "deathmatch-zone.next", "&6Next safe zone: &eX %x% Z %z% &6(radius %size%). It starts closing in &e%time% &6seconds!");
+		DEATHMATCH_ZONE_NEXT = getString(lang, "deathmatch-zone.next", "&6Safe zone #%phase%: &eX %x% Z %z% &6(radius %size%). It starts closing in &e%time% &6seconds!");
 		DEATHMATCH_ZONE_CLOSING = getString(lang, "deathmatch-zone.closing", "&cThe safe zone is closing in! Move to &eX %x% Z %z%");
 		DEATHMATCH_ZONE_FINAL = getString(lang, "deathmatch-zone.final", "&6The safe zone has reached its final size.");
 		GAME_MEETUP_SURFACE_ENABLED = getString(lang, "game.meetup-surface-enabled", "Stay on the surface and inside the border! Anyone hiding underground will be brought back up.");
