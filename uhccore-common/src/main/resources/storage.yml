@@ -1,3 +1,10 @@
 worlds:
   normal: null
   nether: null
+  the_end: null
+# Real folder of each world, relative to the world container. Paper 26+ keeps
+# worlds under world/dimensions/<namespace>/<name> instead of the server root.
+world-folders:
+  normal: null
+  nether: null
+  the_end: null

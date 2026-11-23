@@ -4,10 +4,16 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -28,6 +34,8 @@ import org.bukkit.WorldType;
 import org.bukkit.configuration.InvalidConfigurationException;
 
 import com.gmail.val59000mc.UhcCore;
+import com.gmail.val59000mc.bridge.VersionBridge;
+import com.gmail.val59000mc.bridge.VersionBridgeProvider;
 import com.gmail.val59000mc.configuration.MainConfig;
 import com.gmail.val59000mc.configuration.YamlFile;
 import com.gmail.val59000mc.game.GameManager;
@@ -56,8 +64,13 @@ public class MapLoader {
 	public final static String COMMAND_BLOCK_OUTPUT = "commandBlockOutput";
 	public final static String LOG_ADMIN_COMMANDS = "logAdminCommands";
 
+	private static final String MINECRAFT_NAMESPACE = "minecraft";
+
 	private final MainConfig config;
 	private final Map<Environment, String> worldUuids;
+	// Where each world actually landed on disk, as written to storage.yml. Paper 26+ keeps
+	// worlds under world/dimensions/<namespace>/ instead of the world container root.
+	private final Map<Environment, String> worldFolders;
 
 	private Lobby lobby;
 	private DeathmatchArena arena;
@@ -68,6 +81,7 @@ public class MapLoader {
 	public MapLoader(MainConfig config){
 		this.config = config;
 		worldUuids = new HashMap<>();
+		worldFolders = new HashMap<>();
 		mapSeed = -1;
 		mapName = null;
 	}
@@ -130,6 +144,8 @@ public class MapLoader {
 			deleteLastWorld(Environment.NORMAL);
 			deleteLastWorld(Environment.NETHER);
 			deleteLastWorld(Environment.THE_END);
+			// Never in debug mode: that one reuses the stored worlds.
+			deleteOrphanWorlds();
 
 			createNewWorld(Environment.NORMAL);
 			if (config.get(MainConfig.ENABLE_NETHER)) {
@@ -142,18 +158,63 @@ public class MapLoader {
 	}
 
 	public void deleteLastWorld(Environment env){
-		String uuid = worldUuids.get(env);
+		String worldName = worldUuids.get(env);
 
-		if(uuid == null || uuid.equals("null")){
+		if(!isUsableWorldName(worldName)){
 			LOGGER.info("No world to delete");
-		}else{
-			final File worldDir = new File(Bukkit.getWorldContainer(), uuid);
-			if(worldDir.exists()){
-				LOGGER.info("Deleting last world : "+uuid);
-				FileUtils.deleteFile(worldDir);
-			}else{
-				LOGGER.info("World "+uuid+" can't be removed, directory not found");
+			return;
+		}
+
+		World loadedWorld = Bukkit.getWorld(worldName);
+		if (loadedWorld != null) {
+			// Deleting region files of a loaded world fails on Windows (file locks) and
+			// corrupts it everywhere else, so it has to leave memory first.
+			if (isMainWorld(loadedWorld) || !Bukkit.unloadWorld(loadedWorld, false)) {
+				LOGGER.warning("World " + worldName + " is still loaded and can't be unloaded, leaving its files alone");
+				return;
 			}
+		}
+
+		List<File> worldDirs = findWorldFolders(worldName, worldFolders.get(env));
+		if (worldDirs.isEmpty()) {
+			LOGGER.info("World "+worldName+" can't be removed, directory not found");
+			return;
+		}
+
+		for (File worldDir : worldDirs) {
+			LOGGER.info("Deleting last world : " + worldDir.getPath());
+			if (!FileUtils.deleteFile(worldDir)) {
+				LOGGER.warning("Unable to fully delete " + worldDir.getPath() + ", some files are probably still locked");
+			}
+		}
+	}
+
+	/**
+	 * Removes UHC worlds left behind by crashes, kill -9 or older versions that looked in the
+	 * wrong folder. Everything under {@code dimensions/uhccore} is ours. In {@code dimensions/minecraft}
+	 * only UUID-named world folders are touched, so vanilla and other plugins' dimensions survive.
+	 */
+	private void deleteOrphanWorlds() {
+		Set<Path> loadedFolders = getLoadedWorldFolders();
+
+		for (File worldDir : listSubdirectories(getDimensionsFolder(VersionBridge.UHC_WORLD_NAMESPACE))) {
+			deleteOrphanWorld(worldDir, loadedFolders);
+		}
+
+		for (File worldDir : listSubdirectories(getDimensionsFolder(MINECRAFT_NAMESPACE))) {
+			if (isUuid(worldDir.getName()) && looksLikeWorld(worldDir)) {
+				deleteOrphanWorld(worldDir, loadedFolders);
+			}
+		}
+	}
+
+	private void deleteOrphanWorld(File worldDir, Set<Path> loadedFolders) {
+		if (loadedFolders.contains(normalize(worldDir))) {
+			return;
+		}
+		LOGGER.info("Deleting leftover world from a previous game : " + worldDir.getPath());
+		if (!FileUtils.deleteFile(worldDir)) {
+			LOGGER.warning("Unable to fully delete " + worldDir.getPath());
 		}
 	}
 
@@ -167,7 +228,16 @@ public class MapLoader {
 
 		GameManager gm = GameManager.getGameManager();
 
-		WorldCreator wc = new WorldCreator(worldName);
+		List<Long> seeds = gm.getConfig().get(MainConfig.SEEDS);
+		List<String> worlds = gm.getConfig().get(MainConfig.WORLDS);
+		boolean useSeedList = gm.getConfig().get(MainConfig.PICK_RANDOM_SEED_FROM_LIST) && !seeds.isEmpty();
+		boolean copyMapFromList = !useSeedList && gm.getConfig().get(MainConfig.PICK_RANDOM_WORLD_FROM_LIST) && !worlds.isEmpty();
+
+		// Copied maps go to the world container root. A namespaced world would load from
+		// world/dimensions/uhccore on Paper 26+ and generate fresh terrain instead.
+		WorldCreator wc = copyMapFromList
+			? new WorldCreator(worldName)
+			: VersionBridgeProvider.getBridge().createUhcWorldCreator(worldName);
 		wc.generateStructures(config.get(MainConfig.GENERATE_STRUCTURES));
 		if (env == Environment.NORMAL) {
 			final String cgOverworld = config.get(MainConfig.CHUNK_GENERATOR_OVERWORLD);
@@ -202,16 +272,14 @@ public class MapLoader {
 		}
 		wc.environment(env);
 
-		List<Long> seeds = gm.getConfig().get(MainConfig.SEEDS);
-		List<String> worlds = gm.getConfig().get(MainConfig.WORLDS);
-		if(gm.getConfig().get(MainConfig.PICK_RANDOM_SEED_FROM_LIST) && !seeds.isEmpty()){
+		if(useSeedList){
 			if (mapSeed == -1) {
 				Random r = new Random();
 				mapSeed = seeds.get(r.nextInt(seeds.size()));
 				LOGGER.info("Picking random seed from list : "+mapSeed);
 			}
 			wc.seed(mapSeed);
-		}else if(gm.getConfig().get(MainConfig.PICK_RANDOM_WORLD_FROM_LIST) && !worlds.isEmpty()){
+		}else if(copyMapFromList){
 			if (mapName == null) {
 				Random r = new Random();
 				mapName = worlds.get(r.nextInt(worlds.size()));
@@ -229,8 +297,27 @@ public class MapLoader {
 			}
 		}
 
+		// Saved before the world exists too, so a crash during generation still
+		// leaves enough behind for the next start to clean it up.
 		worldUuids.put(env, worldName);
+		worldFolders.remove(env);
+		saveWorldStorage(env);
 
+		wc.type(WorldType.NORMAL);
+		World createdWorld = Bukkit.getServer().createWorld(wc);
+		LOGGER.info("World seed: " + createdWorld.getSeed());
+
+		if (!worldName.equals(createdWorld.getName())) {
+			LOGGER.warning("World " + worldName + " was registered as " + createdWorld.getName() + ", world lookups by name may fail");
+		}
+
+		File worldFolder = createdWorld.getWorldFolder();
+		LOGGER.info("World folder: " + worldFolder.getPath());
+		worldFolders.put(env, toStoragePath(worldFolder));
+		saveWorldStorage(env);
+	}
+
+	private void saveWorldStorage(Environment env) {
 		YamlFile storage;
 
 		try{
@@ -240,31 +327,34 @@ public class MapLoader {
 			return;
 		}
 
-		storage.set("worlds." + env.name().toLowerCase(), worldName);
+		String key = env.name().toLowerCase(Locale.ROOT);
+		storage.set("worlds." + key, worldUuids.get(env));
+		storage.set("world-folders." + key, worldFolders.get(env));
 		try {
 			storage.save();
 		}catch (IOException ex){
 			LOGGER.log(Level.WARNING, "Unable to save storage.yml", ex);
 		}
-
-		wc.type(WorldType.NORMAL);
-		World createdWorld = Bukkit.getServer().createWorld(wc);
-		LOGGER.info("World seed: " + createdWorld.getSeed());
 	}
 
 	public void loadOldWorld(Environment env){
 		String uuid = worldUuids.get(env);
 
-		if(uuid == null || uuid.equals("null")){
+		if(!isUsableWorldName(uuid)){
 			LOGGER.info("No world to load, defaulting to default behavior");
 			this.createNewWorld(env);
 		}else{
-			final File worldDir = new File(Bukkit.getWorldContainer(), uuid);
-			if(worldDir.exists()){
-				// Loading existing world
-				LOGGER.info("Loading existing world : " + uuid);
-				World loadedWorld = Bukkit.getServer().createWorld(new WorldCreator(uuid).environment(env));
+			final List<File> worldDirs = findWorldFolders(uuid, worldFolders.get(env));
+			if(!worldDirs.isEmpty()){
+				LOGGER.info("Loading existing world : " + worldDirs.get(0).getPath());
+				// Has to be opened under the key it was created with, otherwise Paper 26+
+				// looks in another dimensions folder and generates a brand new world.
+				WorldCreator creator = isInDimensionsFolder(worldDirs.get(0), VersionBridge.UHC_WORLD_NAMESPACE)
+					? VersionBridgeProvider.getBridge().createUhcWorldCreator(uuid)
+					: new WorldCreator(uuid);
+				World loadedWorld = Bukkit.getServer().createWorld(creator.environment(env));
 				LOGGER.info("World seed: " + loadedWorld.getSeed());
+				worldFolders.put(env, toStoragePath(loadedWorld.getWorldFolder()));
 			}else{
 				this.createNewWorld(env);
 			}
@@ -284,6 +374,160 @@ public class MapLoader {
 		worldUuids.put(Environment.NORMAL, storage.getString("worlds.normal"));
 		worldUuids.put(Environment.NETHER, storage.getString("worlds.nether"));
 		worldUuids.put(Environment.THE_END, storage.getString("worlds.the_end"));
+		worldFolders.put(Environment.NORMAL, storage.getString("world-folders.normal"));
+		worldFolders.put(Environment.NETHER, storage.getString("world-folders.nether"));
+		worldFolders.put(Environment.THE_END, storage.getString("world-folders.the_end"));
+	}
+
+	/**
+	 * Every folder on disk that could hold the given UHC world: the path recorded in storage.yml,
+	 * the Paper 26+ dimension folders (ours and the vanilla namespace) and the classic world
+	 * container root.
+	 */
+	private List<File> findWorldFolders(String worldName, @Nullable String storedFolder) {
+		Set<Path> candidates = new LinkedHashSet<>();
+
+		Path stored = resolveStoredFolder(storedFolder, worldName);
+		if (stored != null) {
+			candidates.add(stored);
+		}
+		File uhcDimensions = getDimensionsFolder(VersionBridge.UHC_WORLD_NAMESPACE);
+		if (uhcDimensions != null) {
+			candidates.add(normalize(new File(uhcDimensions, worldName)));
+		}
+		File minecraftDimensions = getDimensionsFolder(MINECRAFT_NAMESPACE);
+		if (minecraftDimensions != null) {
+			candidates.add(normalize(new File(minecraftDimensions, worldName)));
+		}
+		candidates.add(normalize(new File(Bukkit.getWorldContainer(), worldName)));
+
+		Path container = normalize(Bukkit.getWorldContainer());
+		File mainWorldFolder = getMainWorldFolder();
+		Path mainWorld = mainWorldFolder == null ? null : normalize(mainWorldFolder);
+
+		List<File> folders = new ArrayList<>();
+		for (Path candidate : candidates) {
+			if (candidate.equals(container) || candidate.equals(mainWorld)) {
+				continue;
+			}
+			File folder = candidate.toFile();
+			if (folder.isDirectory()) {
+				folders.add(folder);
+			}
+		}
+		return folders;
+	}
+
+	/**
+	 * storage.yml is hand-editable, so the recorded path only counts when it sits inside the
+	 * world container and is named after the world. Anything else gets ignored instead of
+	 * recursively deleted.
+	 */
+	@Nullable
+	private Path resolveStoredFolder(@Nullable String storedFolder, String worldName) {
+		if (storedFolder == null || storedFolder.isEmpty() || storedFolder.equals("null")) {
+			return null;
+		}
+
+		Path container = normalize(Bukkit.getWorldContainer());
+		Path folder;
+		try {
+			Path stored = Paths.get(storedFolder);
+			folder = (stored.isAbsolute() ? stored : container.resolve(stored)).normalize();
+		} catch (RuntimeException ex) {
+			LOGGER.warning("Ignoring invalid world folder in storage.yml: " + storedFolder);
+			return null;
+		}
+
+		if (!folder.startsWith(container) || folder.getFileName() == null
+			|| !folder.getFileName().toString().equals(worldName)) {
+			LOGGER.warning("Ignoring world folder " + storedFolder + " from storage.yml, it doesn't belong to world " + worldName);
+			return null;
+		}
+		return folder;
+	}
+
+	private String toStoragePath(File folder) {
+		Path container = normalize(Bukkit.getWorldContainer());
+		Path path = normalize(folder);
+		if (path.startsWith(container)) {
+			return container.relativize(path).toString().replace(File.separatorChar, '/');
+		}
+		return path.toString();
+	}
+
+	@Nullable
+	private File getMainWorldFolder() {
+		if (Bukkit.getWorlds().isEmpty()) {
+			return null;
+		}
+		return Bukkit.getWorlds().get(0).getWorldFolder();
+	}
+
+	@Nullable
+	private File getDimensionsFolder(String namespace) {
+		File mainWorldFolder = getMainWorldFolder();
+		if (mainWorldFolder == null) {
+			return null;
+		}
+		return new File(new File(mainWorldFolder, "dimensions"), namespace);
+	}
+
+	private boolean isInDimensionsFolder(File folder, String namespace) {
+		File dimensions = getDimensionsFolder(namespace);
+		return dimensions != null && normalize(folder).startsWith(normalize(dimensions));
+	}
+
+	private boolean isMainWorld(World world) {
+		return !Bukkit.getWorlds().isEmpty() && Bukkit.getWorlds().get(0).equals(world);
+	}
+
+	private Set<Path> getLoadedWorldFolders() {
+		Set<Path> folders = new HashSet<>();
+		for (World world : Bukkit.getWorlds()) {
+			folders.add(normalize(world.getWorldFolder()));
+		}
+		return folders;
+	}
+
+	private static List<File> listSubdirectories(@Nullable File folder) {
+		List<File> subdirectories = new ArrayList<>();
+		File[] files = folder == null ? null : folder.listFiles();
+		if (files == null) {
+			return subdirectories;
+		}
+		for (File file : files) {
+			if (file.isDirectory()) {
+				subdirectories.add(file);
+			}
+		}
+		return subdirectories;
+	}
+
+	private static boolean isUsableWorldName(@Nullable String worldName) {
+		return worldName != null
+			&& !worldName.isEmpty()
+			&& !worldName.equals("null")
+			&& !worldName.equals(".")
+			&& !worldName.equals("..")
+			&& worldName.indexOf('/') == -1
+			&& worldName.indexOf('\\') == -1;
+	}
+
+	private static boolean isUuid(String name) {
+		try {
+			return UUID.fromString(name).toString().equals(name.toLowerCase(Locale.ROOT));
+		} catch (IllegalArgumentException ex) {
+			return false;
+		}
+	}
+
+	private static boolean looksLikeWorld(File folder) {
+		return new File(folder, "level.dat").isFile() || new File(folder, "region").isDirectory();
+	}
+
+	private static Path normalize(File file) {
+		return file.toPath().toAbsolutePath().normalize();
 	}
 
 	/**
