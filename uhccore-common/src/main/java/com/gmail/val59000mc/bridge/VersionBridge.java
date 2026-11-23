@@ -6,6 +6,7 @@ import java.util.concurrent.CompletableFuture;
 import io.papermc.lib.PaperLib;
 import org.bukkit.Chunk;
 import org.bukkit.World;
+import org.bukkit.WorldCreator;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.LivingEntity;
@@ -18,6 +19,26 @@ import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
 
 public interface VersionBridge {
+
+	String UHC_WORLD_NAMESPACE = "uhccore";
+
+	/**
+	 * Creator for a UHC world, keyed {@code uhccore:<path>} where the server has world keys (Paper 1.16.5+),
+	 * a plain one otherwise. Don't assume {@code creator.name()} equals the path: Paper 26.x registers a
+	 * namespaced world as {@code <namespace>_<path>}, and {@code name()} is the only place that says so
+	 * before the world exists.
+	 */
+	default WorldCreator createUhcWorldCreator(String path) {
+		return new WorldCreator(path);
+	}
+
+	/**
+	 * @return the key of a creator made by {@link #createUhcWorldCreator(String)} (e.g. {@code uhccore:<path>}),
+	 *         or null when it ended up being a plain one
+	 */
+	default String getWorldKey(WorldCreator creator) {
+		return null;
+	}
 
 	// World operations
 	void setWorldBorder(World world, double centerX, double centerZ, double sideLength);

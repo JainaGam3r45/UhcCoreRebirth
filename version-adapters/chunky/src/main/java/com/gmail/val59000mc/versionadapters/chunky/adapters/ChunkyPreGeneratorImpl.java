@@ -34,15 +34,21 @@ public class ChunkyPreGeneratorImpl implements ChunkyPreGenerator {
 		final CompletableFuture<Void> generationComplete = new CompletableFuture<>();
 		final ChunkyAPI chunky = Bukkit.getServer().getServicesManager().load(ChunkyAPI.class);
 
+		// Chunky-Paper reports a world by its key ("uhccore:<uuid>"), which on Paper 26.x is not the
+		// Bukkit name ("uhccore_<uuid>"), so events have to match against every id we know.
+		final List<String> ids = new ArrayList<>();
+		ids.add(world);
+		ids.addAll(alternateIds);
+
 		if (progress != null) {
 			chunky.onGenerationProgress(e -> {
-				if (isSameWorld(e.world(), world)) {
+				if (isSameWorld(e.world(), ids)) {
 					progress.update(world, e.chunks(), e.progress());
 				}
 			});
 		}
 		chunky.onGenerationComplete(e -> {
-			if (isSameWorld(e.world(), world)) {
+			if (isSameWorld(e.world(), ids)) {
 				if (progress != null) {
 					progress.complete(world);
 				}
@@ -54,9 +60,6 @@ public class ChunkyPreGeneratorImpl implements ChunkyPreGenerator {
 
 		// startTask returns false when Chunky can't resolve the world. Ignoring that left the
 		// server kicking everyone with kick.loading forever, since completion never fires.
-		List<String> ids = new ArrayList<>();
-		ids.add(world);
-		ids.addAll(alternateIds);
 		for (String id : ids) {
 			if (chunky.startTask(id, "square", 0, 0, size, size, "region")) {
 				return generationComplete;
@@ -73,6 +76,15 @@ public class ChunkyPreGeneratorImpl implements ChunkyPreGenerator {
 	 * comparison ignores case. We can't ask the world for its key here: this adapter also
 	 * ships in the Legacy jar, where World#getKey doesn't exist.
 	 */
+	static boolean isSameWorld(String chunkyWorld, List<String> worldIds) {
+		for (String worldId : worldIds) {
+			if (isSameWorld(chunkyWorld, worldId)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	static boolean isSameWorld(String chunkyWorld, String worldName) {
 		if (chunkyWorld == null || worldName == null) {
 			return false;

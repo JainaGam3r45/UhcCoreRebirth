@@ -1,13 +1,16 @@
 package com.gmail.val59000mc.bridge;
 
 import com.gmail.val59000mc.utils.VersionUtils;
+import java.lang.reflect.Method;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.GameRule;
+import org.bukkit.NamespacedKey;
 import org.bukkit.World;
+import org.bukkit.WorldCreator;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.LivingEntity;
@@ -23,6 +26,53 @@ public class DefaultVersionBridge implements VersionBridge {
 
 	private static final Logger LOGGER = Logger.getLogger(DefaultVersionBridge.class.getCanonicalName());
 	private static volatile boolean actionBarUnsupported = false;
+	private static volatile boolean worldKeyApiLookedUp = false;
+	private static volatile Method worldCreatorOfKey;
+	private static volatile Method worldCreatorKey;
+
+	@Override
+	public WorldCreator createUhcWorldCreator(String path) {
+		findWorldKeyApi();
+		if (worldCreatorOfKey != null) {
+			try {
+				return (WorldCreator) worldCreatorOfKey.invoke(null, new NamespacedKey(UHC_WORLD_NAMESPACE, path));
+			} catch (ReflectiveOperationException | RuntimeException e) {
+				LOGGER.log(Level.WARNING, "Unable to create namespaced world " + path + ", falling back to a plain world name", e);
+			}
+		}
+		return new WorldCreator(path);
+	}
+
+	@Override
+	public String getWorldKey(WorldCreator creator) {
+		findWorldKeyApi();
+		if (worldCreatorKey != null) {
+			try {
+				return String.valueOf(worldCreatorKey.invoke(creator));
+			} catch (ReflectiveOperationException | RuntimeException e) {
+				LOGGER.log(Level.FINE, "Unable to read the world key", e);
+			}
+		}
+		return null;
+	}
+
+	private static void findWorldKeyApi() {
+		if (worldKeyApiLookedUp) {
+			return;
+		}
+		// WorldCreator#ofKey and #key are Paper-only and this jar compiles against Spigot 1.15.2.
+		// NamespacedKey itself is 1.12+, hence the version gate before touching it.
+		if (VersionUtils.isAtLeast(16)) {
+			try {
+				worldCreatorOfKey = WorldCreator.class.getMethod("ofKey", NamespacedKey.class);
+				worldCreatorKey = WorldCreator.class.getMethod("key");
+			} catch (NoSuchMethodException ignored) {
+				worldCreatorOfKey = null;
+				worldCreatorKey = null;
+			}
+		}
+		worldKeyApiLookedUp = true;
+	}
 
 	@Override
 	public void setWorldBorder(World world, double centerX, double centerZ, double sideLength) {

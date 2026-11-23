@@ -34,6 +34,8 @@ import org.bukkit.WorldType;
 import org.bukkit.configuration.InvalidConfigurationException;
 
 import com.gmail.val59000mc.UhcCore;
+import com.gmail.val59000mc.bridge.VersionBridge;
+import com.gmail.val59000mc.bridge.VersionBridgeProvider;
 import com.gmail.val59000mc.configuration.MainConfig;
 import com.gmail.val59000mc.configuration.YamlFile;
 import com.gmail.val59000mc.game.GameManager;
@@ -64,12 +66,13 @@ public class MapLoader {
 	public final static String LOG_ADMIN_COMMANDS = "logAdminCommands";
 
 	private static final String MINECRAFT_NAMESPACE = "minecraft";
-	// 1.22.3 created worlds under this namespace. Paper 26.x then registers them as uhccore_<uuid>, which
-	// broke every lookup by name, so they are plain again. Only kept to sweep what 1.22.3 left behind.
-	private static final String LEFTOVER_NAMESPACE = "uhccore";
 
 	private final MainConfig config;
-	private final Map<Environment, String> worldUuids;
+	// Bukkit's name for each world, which is what every lookup uses. Usually the folder name, but a
+	// namespaced world on Paper 26.x is registered as <namespace>_<path>.
+	private final Map<Environment, String> worldNames;
+	// Key of each world ("uhccore:<path>"), null for plain-named ones.
+	private final Map<Environment, String> worldKeys;
 	// Where each world actually landed on disk, as written to storage.yml. Paper 26+ keeps
 	// worlds under world/dimensions/<namespace>/ instead of the world container root.
 	private final Map<Environment, String> worldFolders;
@@ -83,7 +86,8 @@ public class MapLoader {
 
 	public MapLoader(MainConfig config){
 		this.config = config;
-		worldUuids = new HashMap<>();
+		worldNames = new HashMap<>();
+		worldKeys = new HashMap<>();
 		worldFolders = new HashMap<>();
 		preGenerationProgress = new PreGenerationProgress();
 		mapSeed = -1;
@@ -178,7 +182,7 @@ public class MapLoader {
 	}
 
 	public void deleteLastWorld(Environment env){
-		String worldName = worldUuids.get(env);
+		String worldName = worldNames.get(env);
 
 		if(!isUsableWorldName(worldName)){
 			LOGGER.info("No world to delete");
@@ -195,7 +199,7 @@ public class MapLoader {
 			}
 		}
 
-		List<File> worldDirs = findWorldFolders(worldName, worldFolders.get(env));
+		List<File> worldDirs = findWorldFolders(worldName, worldKeys.get(env), worldFolders.get(env));
 		if (worldDirs.isEmpty()) {
 			LOGGER.info("World "+worldName+" can't be removed, directory not found");
 			return;
@@ -217,7 +221,7 @@ public class MapLoader {
 	private void deleteOrphanWorlds() {
 		Set<Path> loadedFolders = getLoadedWorldFolders();
 
-		for (File worldDir : listSubdirectories(getDimensionsFolder(LEFTOVER_NAMESPACE))) {
+		for (File worldDir : listSubdirectories(getDimensionsFolder(VersionBridge.UHC_WORLD_NAMESPACE))) {
 			deleteOrphanWorld(worldDir, loadedFolders);
 		}
 
@@ -239,12 +243,12 @@ public class MapLoader {
 	}
 
 	public void createNewWorld(Environment env){
-		String worldName = UUID.randomUUID().toString();
+		String worldPath = UUID.randomUUID().toString();
 		if (UhcCore.getPlugin().getConfig().getBoolean("permanent-world-names", false)){
-			worldName = "uhc-"+env.name().toLowerCase();
+			worldPath = "uhc-"+env.name().toLowerCase();
 		}
 
-		LOGGER.info("Creating new world : "+worldName);
+		LOGGER.info("Creating new world : "+worldPath);
 
 		GameManager gm = GameManager.getGameManager();
 
@@ -253,11 +257,15 @@ public class MapLoader {
 		boolean useSeedList = gm.getConfig().get(MainConfig.PICK_RANDOM_SEED_FROM_LIST) && !seeds.isEmpty();
 		boolean copyMapFromList = !useSeedList && gm.getConfig().get(MainConfig.PICK_RANDOM_WORLD_FROM_LIST) && !worlds.isEmpty();
 
-		// Plain name on purpose: the world has to be called exactly worldName, WorldInitEvent, Chunky and
-		// getUhcWorld all look it up by that. Namespaced keys end up as "<namespace>_<name>" on Paper 26.x.
-		// Map copies land in the world container root, builds that keep worlds under world/dimensions
-		// don't pick them up either way.
-		WorldCreator wc = new WorldCreator(worldName);
+		// Map copies land in the world container root, which is where a plain-named world loads from up
+		// to 1.21. Builds that keep worlds under world/dimensions never pick the copy up.
+		WorldCreator wc = copyMapFromList
+			? new WorldCreator(worldPath)
+			: VersionBridgeProvider.getBridge().createUhcWorldCreator(worldPath);
+		// Not worldPath: Paper 26.x registers uhccore:<path> as uhccore_<path>. WorldInitEvent and every
+		// getUhcWorld lookup need this exact name, and it only fires during createWorld below.
+		String worldName = wc.name();
+		String worldKey = copyMapFromList ? null : VersionBridgeProvider.getBridge().getWorldKey(wc);
 		wc.generateStructures(config.get(MainConfig.GENERATE_STRUCTURES));
 		if (env == Environment.NORMAL) {
 			final String cgOverworld = config.get(MainConfig.CHUNK_GENERATOR_OVERWORLD);
@@ -311,7 +319,7 @@ public class MapLoader {
 			}
 
 			try {
-				copyWorld(copyWorld, worldName);
+				copyWorld(copyWorld, worldPath);
 			} catch (IOException e) {
 				LOGGER.log(Level.WARNING, "Unable to copy world " + copyWorld, e);
 			}
@@ -319,7 +327,8 @@ public class MapLoader {
 
 		// Saved before the world exists too, so a crash during generation still
 		// leaves enough behind for the next start to clean it up.
-		worldUuids.put(env, worldName);
+		worldNames.put(env, worldName);
+		worldKeys.put(env, worldKey);
 		worldFolders.remove(env);
 		saveWorldStorage(env);
 
@@ -328,7 +337,10 @@ public class MapLoader {
 		LOGGER.info("World seed: " + createdWorld.getSeed());
 
 		if (!worldName.equals(createdWorld.getName())) {
-			LOGGER.warning("World " + worldName + " was registered as " + createdWorld.getName() + ", world lookups by name may fail");
+			// Shouldn't happen since the name comes from the creator, but a fork could rename worlds
+			// differently. Better to keep finding the world than to throw on the first lookup.
+			LOGGER.warning("World " + worldName + " was registered as " + createdWorld.getName() + ", using that name");
+			worldNames.put(env, createdWorld.getName());
 		}
 
 		File worldFolder = createdWorld.getWorldFolder();
@@ -348,7 +360,8 @@ public class MapLoader {
 		}
 
 		String key = env.name().toLowerCase(Locale.ROOT);
-		storage.set("worlds." + key, worldUuids.get(env));
+		storage.set("worlds." + key, worldNames.get(env));
+		storage.set("world-keys." + key, worldKeys.get(env));
 		storage.set("world-folders." + key, worldFolders.get(env));
 		try {
 			storage.save();
@@ -358,17 +371,24 @@ public class MapLoader {
 	}
 
 	public void loadOldWorld(Environment env){
-		String uuid = worldUuids.get(env);
+		String uuid = worldNames.get(env);
 
 		if(!isUsableWorldName(uuid)){
 			LOGGER.info("No world to load, defaulting to default behavior");
 			this.createNewWorld(env);
 		}else{
-			final List<File> worldDirs = findWorldFolders(uuid, worldFolders.get(env));
+			final String key = worldKeys.get(env);
+			final List<File> worldDirs = findWorldFolders(uuid, key, worldFolders.get(env));
 			if(!worldDirs.isEmpty()){
 				LOGGER.info("Loading existing world : " + worldDirs.get(0).getPath());
-				World loadedWorld = Bukkit.getServer().createWorld(new WorldCreator(uuid).environment(env));
+				// Has to be opened under the key it was created with, or Paper 26.x looks in another
+				// dimensions folder and generates a brand new world.
+				WorldCreator creator = key == null
+					? new WorldCreator(uuid)
+					: VersionBridgeProvider.getBridge().createUhcWorldCreator(getKeyPath(key, uuid));
+				World loadedWorld = Bukkit.getServer().createWorld(creator.environment(env));
 				LOGGER.info("World seed: " + loadedWorld.getSeed());
+				worldNames.put(env, loadedWorld.getName());
 				worldFolders.put(env, toStoragePath(loadedWorld.getWorldFolder()));
 			}else{
 				this.createNewWorld(env);
@@ -386,9 +406,12 @@ public class MapLoader {
 			return;
 		}
 
-		worldUuids.put(Environment.NORMAL, storage.getString("worlds.normal"));
-		worldUuids.put(Environment.NETHER, storage.getString("worlds.nether"));
-		worldUuids.put(Environment.THE_END, storage.getString("worlds.the_end"));
+		worldNames.put(Environment.NORMAL, storage.getString("worlds.normal"));
+		worldNames.put(Environment.NETHER, storage.getString("worlds.nether"));
+		worldNames.put(Environment.THE_END, storage.getString("worlds.the_end"));
+		worldKeys.put(Environment.NORMAL, storage.getString("world-keys.normal"));
+		worldKeys.put(Environment.NETHER, storage.getString("world-keys.nether"));
+		worldKeys.put(Environment.THE_END, storage.getString("world-keys.the_end"));
 		worldFolders.put(Environment.NORMAL, storage.getString("world-folders.normal"));
 		worldFolders.put(Environment.NETHER, storage.getString("world-folders.nether"));
 		worldFolders.put(Environment.THE_END, storage.getString("world-folders.the_end"));
@@ -399,16 +422,17 @@ public class MapLoader {
 	 * the Paper 26+ dimension folders (ours and the vanilla namespace) and the classic world
 	 * container root.
 	 */
-	private List<File> findWorldFolders(String worldName, @Nullable String storedFolder) {
+	private List<File> findWorldFolders(String worldName, @Nullable String worldKey, @Nullable String storedFolder) {
 		Set<Path> candidates = new LinkedHashSet<>();
+		String worldPath = getKeyPath(worldKey, worldName);
 
-		Path stored = resolveStoredFolder(storedFolder, worldName);
+		Path stored = resolveStoredFolder(storedFolder, worldName, worldPath);
 		if (stored != null) {
 			candidates.add(stored);
 		}
-		File uhcDimensions = getDimensionsFolder(LEFTOVER_NAMESPACE);
+		File uhcDimensions = getDimensionsFolder(VersionBridge.UHC_WORLD_NAMESPACE);
 		if (uhcDimensions != null) {
-			candidates.add(normalize(new File(uhcDimensions, worldName)));
+			candidates.add(normalize(new File(uhcDimensions, worldPath)));
 		}
 		File minecraftDimensions = getDimensionsFolder(MINECRAFT_NAMESPACE);
 		if (minecraftDimensions != null) {
@@ -439,7 +463,7 @@ public class MapLoader {
 	 * recursively deleted.
 	 */
 	@Nullable
-	private Path resolveStoredFolder(@Nullable String storedFolder, String worldName) {
+	private Path resolveStoredFolder(@Nullable String storedFolder, String worldName, String worldPath) {
 		if (storedFolder == null || storedFolder.isEmpty() || storedFolder.equals("null")) {
 			return null;
 		}
@@ -454,8 +478,9 @@ public class MapLoader {
 			return null;
 		}
 
-		if (!folder.startsWith(container) || folder.getFileName() == null
-			|| !folder.getFileName().toString().equals(worldName)) {
+		String folderName = folder.getFileName() == null ? null : folder.getFileName().toString();
+		if (!folder.startsWith(container) || folderName == null
+			|| !(folderName.equals(worldName) || folderName.equals(worldPath))) {
 			LOGGER.warning("Ignoring world folder " + storedFolder + " from storage.yml, it doesn't belong to world " + worldName);
 			return null;
 		}
@@ -479,13 +504,31 @@ public class MapLoader {
 		return Bukkit.getWorlds().get(0).getWorldFolder();
 	}
 
+	/**
+	 * Folder that holds {@code dimensions/}. On Paper 26.x the main world's own folder is already
+	 * {@code <level>/dimensions/minecraft/overworld}, so it has to be walked back up to the level.
+	 */
 	@Nullable
-	private File getDimensionsFolder(String namespace) {
+	private File getLevelFolder() {
 		File mainWorldFolder = getMainWorldFolder();
 		if (mainWorldFolder == null) {
 			return null;
 		}
-		return new File(new File(mainWorldFolder, "dimensions"), namespace);
+		File namespaceFolder = mainWorldFolder.getParentFile();
+		File dimensionsFolder = namespaceFolder == null ? null : namespaceFolder.getParentFile();
+		if (dimensionsFolder != null && dimensionsFolder.getName().equals("dimensions") && dimensionsFolder.getParentFile() != null) {
+			return dimensionsFolder.getParentFile();
+		}
+		return mainWorldFolder;
+	}
+
+	@Nullable
+	private File getDimensionsFolder(String namespace) {
+		File levelFolder = getLevelFolder();
+		if (levelFolder == null) {
+			return null;
+		}
+		return new File(new File(levelFolder, "dimensions"), namespace);
 	}
 
 	private boolean isMainWorld(World world) {
@@ -524,6 +567,17 @@ public class MapLoader {
 			&& worldName.indexOf('\\') == -1;
 	}
 
+	/**
+	 * The part of the key after the namespace, which is the folder name under {@code dimensions/<namespace>/}.
+	 */
+	private static String getKeyPath(@Nullable String worldKey, String worldName) {
+		if (worldKey == null) {
+			return worldName;
+		}
+		String path = worldKey.substring(worldKey.indexOf(':') + 1);
+		return isUsableWorldName(path) ? path : worldName;
+	}
+
 	private static boolean isUuid(String name) {
 		try {
 			return UUID.fromString(name).toString().equals(name.toLowerCase(Locale.ROOT));
@@ -541,14 +595,23 @@ public class MapLoader {
 	}
 
 	/**
-	 * Used to obtain the UHC world uuid matching the given environment.
-	 * @param environment The environment of the world uuid you want to obtain.
-	 * @return Returns the UHC world uuid matching the environment or null if it doesn't exist.
+	 * @return the key the world was created under (e.g. {@code uhccore:<uuid>}), or null for a plain-named one
+	 */
+	@Nullable
+	public String getUhcWorldKey(Environment environment) {
+		return worldKeys.get(environment);
+	}
+
+	/**
+	 * Used to obtain the UHC world name matching the given environment, as Bukkit knows it. Despite the
+	 * method name that is not always a bare uuid: Paper 26.x registers a namespaced world as {@code uhccore_<uuid>}.
+	 * @param environment The environment of the world name you want to obtain.
+	 * @return Returns the UHC world name matching the environment or null if it doesn't exist.
 	 */
 	@Nullable
 	public String getUhcWorldUuid(Environment environment){
 		Validate.notNull(environment);
-		return worldUuids.get(environment);
+		return worldNames.get(environment);
 	}
 
 	/**
@@ -560,7 +623,7 @@ public class MapLoader {
 	public World getUhcWorld(Environment environment){
 		Validate.notNull(environment);
 
-		String worldUuid = worldUuids.get(environment);
+		String worldUuid = worldNames.get(environment);
 		if (worldUuid == null){
 			return null;
 		}

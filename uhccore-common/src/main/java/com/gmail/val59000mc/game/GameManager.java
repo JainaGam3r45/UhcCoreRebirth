@@ -281,9 +281,9 @@ public class GameManager{
 					progress.track(nether.getName(), Environment.NETHER, PreGenerationProgress.countChunksInSquare(netherSize));
 				}
 
-				preGenerationTasks.add(chunkyPreGenerator.preGenerateChunks(overworld.getName(), getNamespacedIds(overworld), overworldSize, progress));
+				preGenerationTasks.add(chunkyPreGenerator.preGenerateChunks(overworld.getName(), getChunkyIds(Environment.NORMAL, overworld), overworldSize, progress));
 				if (nether != null) {
-					preGenerationTasks.add(chunkyPreGenerator.preGenerateChunks(nether.getName(), getNamespacedIds(nether), netherSize, progress));
+					preGenerationTasks.add(chunkyPreGenerator.preGenerateChunks(nether.getName(), getChunkyIds(Environment.NETHER, nether), netherSize, progress));
 				}
 
 				CompletableFuture.allOf(preGenerationTasks.stream().toArray(CompletableFuture[]::new))
@@ -309,8 +309,9 @@ public class GameManager{
 	/**
 	 * Chunky-Paper resolves worlds by key, which for our plain-named worlds is minecraft:<name>.
 	 */
-	private static List<String> getNamespacedIds(World world) {
-		return Collections.singletonList("minecraft:" + world.getName());
+	private List<String> getChunkyIds(Environment environment, World world) {
+		String key = mapLoader.getUhcWorldKey(environment);
+		return Collections.singletonList(key != null ? key : "minecraft:" + world.getName());
 	}
 
 	public void startWaitingPlayers() {
