@@ -104,9 +104,15 @@ public class Craft {
 		craftRecipe.shape("abc","def","ghi");
 
 		List<Character> symbols = Arrays.asList('a','b','c','d','e','f','g','h','i');
+		// Flattened materials carry no data value, and getData() would wake up CraftLegacy.
+		boolean flattened = VersionUtils.isAtLeast(13);
 		for(int i=0 ; i<9 ; i++){
 			if(!recipe.get(i).getType().equals(Material.AIR)){
 				Material material = recipe.get(i).getType();
+				if (flattened) {
+					craftRecipe.setIngredient(symbols.get(i), material);
+					continue;
+				}
 				MaterialData data = recipe.get(i).getData();
 				if (data != null && data.getItemType() == material) {
 					craftRecipe.setIngredient(symbols.get(i), data);

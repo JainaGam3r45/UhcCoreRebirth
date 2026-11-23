@@ -342,10 +342,19 @@ public class CraftsManager {
 		headRecipe.shape("GGG", "GHG", "GGG");
 
 		Material material = UniversalMaterial.PLAYER_HEAD_ITEM.getType();
-		MaterialData data = UniversalMaterial.PLAYER_HEAD_ITEM.getStack().getData();
 
 		headRecipe.setIngredient('G', Material.GOLD_INGOT);
 
+		// ItemStack#getData() on 1.13+ boots CraftLegacy, which freezes startup for
+		// seconds and prints the "Initializing Legacy Material Support" warning.
+		// PLAYER_HEAD is its own material there, so there's no data value to match.
+		if (VersionUtils.isAtLeast(13)) {
+			headRecipe.setIngredient('H', material);
+			Bukkit.getServer().addRecipe(headRecipe);
+			return;
+		}
+
+		MaterialData data = UniversalMaterial.PLAYER_HEAD_ITEM.getStack().getData();
 		if (data != null && data.getItemType() == material) {
 			headRecipe.setIngredient('H', data);
 		}else {
