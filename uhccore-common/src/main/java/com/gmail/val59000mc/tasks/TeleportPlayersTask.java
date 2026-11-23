@@ -1,12 +1,12 @@
 package com.gmail.val59000mc.tasks;
 
+import com.gmail.val59000mc.bridge.VersionBridgeProvider;
 import com.gmail.val59000mc.exceptions.UhcPlayerNotOnlineException;
 import com.gmail.val59000mc.game.GameManager;
 import com.gmail.val59000mc.players.UhcPlayer;
 import com.gmail.val59000mc.players.UhcTeam;
 import com.gmail.val59000mc.utils.LocationUtils;
 import com.gmail.val59000mc.utils.MainThread;
-import io.papermc.lib.PaperLib;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -47,7 +47,7 @@ public class TeleportPlayersTask implements Runnable{
 
 		// Teleporting into an unloaded chunk reads it from disk right there on the main thread.
 		// Loading it first through Paper keeps a big scatter from turning into one long lag spike.
-		PaperLib.getChunkAtAsync(destination).whenComplete((chunk, error) -> {
+		VersionBridgeProvider.getBridge().getChunkAtAsync(destination.getWorld(), destination.getBlockX() >> 4, destination.getBlockZ() >> 4).whenComplete((chunk, error) -> {
 			if (error != null) {
 				LOGGER.log(Level.WARNING, "Unable to preload the spawn chunk of team #" + team.getTeamNumber(), error);
 			}

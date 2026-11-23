@@ -1,8 +1,8 @@
 package com.gmail.val59000mc.tasks;
 
 import com.gmail.val59000mc.UhcCore;
+import com.gmail.val59000mc.bridge.VersionBridgeProvider;
 import com.gmail.val59000mc.versionadapters.PreGenerationProgress;
-import io.papermc.lib.PaperLib;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.World;
@@ -47,12 +47,12 @@ public abstract class ChunkLoaderTask implements Runnable {
 	}
 
 	/**
-	 * Deliberately asks PaperLib instead of VersionUtils: getChunkAtAsync only goes async when
-	 * PaperLib picked its Paper handler. PaperLib 1.0.8 can't parse 26.x, falls back to plain
-	 * world.getChunkAt there, and Paper kills sync chunk loads coming from another thread.
+	 * Asks the version bridge instead of VersionUtils: chunk loads only go async on Paper, and
+	 * Paper kills sync chunk loads coming from another thread. The Modern bridge talks to Paper
+	 * directly because PaperLib 1.0.8 can't parse 26.x and would quietly fall back to sync.
 	 */
 	public static boolean canRunOffMainThread() {
-		return PaperLib.isPaper() && PaperLib.isVersion(13);
+		return VersionBridgeProvider.getBridge().supportsAsyncChunkLoading();
 	}
 
 	public abstract void onDoneLoadingWorld();
@@ -63,7 +63,7 @@ public abstract class ChunkLoaderTask implements Runnable {
 		int loaded = 0;
 		while(x <= maxChunk && loaded < restEveryNumOfChunks){
 			try {
-				Chunk chunk = PaperLib.getChunkAtAsync(world, x, z, true).get();
+				Chunk chunk = VersionBridgeProvider.getBridge().getChunkAtAsync(world, x, z).get();
 
 				if (Bukkit.isPrimaryThread()){
 					onDoneLoadingChunk(chunk);

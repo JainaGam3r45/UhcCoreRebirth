@@ -10,15 +10,15 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.World.Environment;
 
-import io.papermc.lib.PaperLib;
+import com.gmail.val59000mc.bridge.VersionBridgeProvider;
 
 /**
  * Random spawn search that never reads chunks from disk on the main thread. Candidate chunks get
  * loaded through Paper's async chunk API and each column is checked on the main thread as soon as
  * its chunk arrives, which costs nothing once it's in memory.
  * <p>
- * Only worth it on Paper 1.13+: anywhere else PaperLib falls back to a sync load, and 1.8 - 1.12
- * also need the 5x5 populate dance from {@link LocationUtils}.
+ * Only worth it where the bridge reports async chunk loading (Paper 1.13+ and 26.x): anywhere else
+ * the load is sync anyway, and 1.8 - 1.12 also need the 5x5 populate dance from {@link LocationUtils}.
  * </p>
  */
 public final class AsyncSpawnSearch {
@@ -68,7 +68,7 @@ public final class AsyncSpawnSearch {
 				continue;
 			}
 
-			evaluations.add(PaperLib.getChunkAtAsync(world, x >> 4, z >> 4, true).thenAccept(chunk -> MainThread.execute(() -> {
+			evaluations.add(VersionBridgeProvider.getBridge().getChunkAtAsync(world, x >> 4, z >> 4).thenAccept(chunk -> MainThread.execute(() -> {
 				if (result.isDone()) {
 					return;
 				}

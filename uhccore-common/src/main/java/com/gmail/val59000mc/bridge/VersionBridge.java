@@ -1,6 +1,10 @@
 package com.gmail.val59000mc.bridge;
 
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+
+import io.papermc.lib.PaperLib;
+import org.bukkit.Chunk;
 import org.bukkit.World;
 import org.bukkit.WorldCreator;
 import org.bukkit.block.Block;
@@ -37,6 +41,23 @@ public interface VersionBridge {
 	boolean setLocatorBar(World world, boolean enabled);
 
 	void setSpawnChunkRadius(World world, int radius);
+
+	// Chunks
+	/**
+	 * True when {@link #getChunkAtAsync(World, int, int)} really loads off the main thread.
+	 * PaperLib only knows that when it picked its Paper handler, which needs 1.13+.
+	 */
+	default boolean supportsAsyncChunkLoading() {
+		return PaperLib.isPaper() && PaperLib.isVersion(13);
+	}
+
+	/**
+	 * Loads (and generates) a chunk. Off the main thread where {@link #supportsAsyncChunkLoading()} says so,
+	 * otherwise it's a plain sync load wrapped in a completed future.
+	 */
+	default CompletableFuture<Chunk> getChunkAtAsync(World world, int chunkX, int chunkZ) {
+		return PaperLib.getChunkAtAsync(world, chunkX, chunkZ, true);
+	}
 
 	// Scoreboards
 	void setReadOnlyPlayerScore(Score score, int value);

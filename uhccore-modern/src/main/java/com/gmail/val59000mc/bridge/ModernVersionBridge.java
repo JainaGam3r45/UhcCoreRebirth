@@ -4,9 +4,11 @@ import com.gmail.val59000mc.utils.ModernVersionUtils;
 import com.gmail.val59000mc.utils.VersionUtils;
 import java.util.Locale;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import io.papermc.paper.scoreboard.numbers.NumberFormat;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
+import org.bukkit.Chunk;
 import org.bukkit.GameRule;
 import org.bukkit.Keyed;
 import org.bukkit.Material;
@@ -34,9 +36,34 @@ import org.bukkit.scoreboard.Team.OptionStatus;
 public class ModernVersionBridge implements VersionBridge {
 
 	private static volatile boolean numberFormatUnsupported = false;
+	// PaperLib 1.0.8 can't parse 26.x version strings and quietly goes sync there,
+	// so ask Paper directly. Spigot doesn't have the method.
+	private static final boolean NATIVE_ASYNC_CHUNKS = hasNativeAsyncChunks();
 
 	public ModernVersionBridge() {
 		VersionUtils.setVersionUtils(new ModernVersionUtils());
+	}
+
+	private static boolean hasNativeAsyncChunks() {
+		try {
+			World.class.getMethod("getChunkAtAsync", int.class, int.class, boolean.class);
+			return true;
+		} catch (NoSuchMethodException e) {
+			return false;
+		}
+	}
+
+	@Override
+	public boolean supportsAsyncChunkLoading() {
+		return NATIVE_ASYNC_CHUNKS;
+	}
+
+	@Override
+	public CompletableFuture<Chunk> getChunkAtAsync(World world, int chunkX, int chunkZ) {
+		if (NATIVE_ASYNC_CHUNKS) {
+			return world.getChunkAtAsync(chunkX, chunkZ, true);
+		}
+		return CompletableFuture.completedFuture(world.getChunkAt(chunkX, chunkZ));
 	}
 
 	@Override
