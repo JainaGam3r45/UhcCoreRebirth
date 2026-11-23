@@ -1,5 +1,6 @@
 package com.gmail.val59000mc.versionadapters.adapters;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import com.gmail.val59000mc.versionadapters.PreGenerationProgress;
@@ -17,10 +18,14 @@ public interface ChunkyPreGenerator extends VersionAdapter {
 	CompletableFuture<Void> preGenerateChunks(String world, int size);
 
 	/**
-	 * Same as {@link #preGenerateChunks(String, int)}, also reporting progress for the given world name.
-	 * The world must already be tracked by {@code progress}.
+	 * Same as {@link #preGenerateChunks(String, int)}, also reporting progress under the plain world name,
+	 * which must already be tracked by {@code progress}.
+	 *
+	 * @param alternateIds other ids Chunky may know the world by (its namespaced key), tried in order
+	 *                     when Chunky can't resolve the plain name
+	 * @return a future which completes when the area is generated, or fails when Chunky couldn't start at all
 	 */
-	default CompletableFuture<Void> preGenerateChunks(String world, int size, PreGenerationProgress progress) {
+	default CompletableFuture<Void> preGenerateChunks(String world, List<String> alternateIds, int size, PreGenerationProgress progress) {
 		return preGenerateChunks(world, size);
 	}
 

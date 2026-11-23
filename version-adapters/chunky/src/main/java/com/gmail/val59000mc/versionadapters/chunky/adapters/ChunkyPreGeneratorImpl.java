@@ -1,5 +1,8 @@
 package com.gmail.val59000mc.versionadapters.chunky.adapters;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
@@ -23,11 +26,11 @@ public class ChunkyPreGeneratorImpl implements ChunkyPreGenerator {
 
 	@Override
 	public CompletableFuture<Void> preGenerateChunks(String world, int size) {
-		return preGenerateChunks(world, size, null);
+		return preGenerateChunks(world, Collections.<String>emptyList(), size, null);
 	}
 
 	@Override
-	public CompletableFuture<Void> preGenerateChunks(String world, int size, PreGenerationProgress progress) {
+	public CompletableFuture<Void> preGenerateChunks(String world, List<String> alternateIds, int size, PreGenerationProgress progress) {
 		final CompletableFuture<Void> generationComplete = new CompletableFuture<>();
 		final ChunkyAPI chunky = Bukkit.getServer().getServicesManager().load(ChunkyAPI.class);
 
@@ -48,8 +51,19 @@ public class ChunkyPreGeneratorImpl implements ChunkyPreGenerator {
 				LOGGER.fine("Ignoring Chunky completion for " + e.world() + ", waiting for " + world);
 			}
 		});
-		chunky.startTask(world, "square", 0, 0, size, size, "region");
 
+		// startTask returns false when Chunky can't resolve the world. Ignoring that left the
+		// server kicking everyone with kick.loading forever, since completion never fires.
+		List<String> ids = new ArrayList<>();
+		ids.add(world);
+		ids.addAll(alternateIds);
+		for (String id : ids) {
+			if (chunky.startTask(id, "square", 0, 0, size, size, "region")) {
+				return generationComplete;
+			}
+		}
+
+		generationComplete.completeExceptionally(new IllegalStateException("Chunky could not start a task for any of " + ids));
 		return generationComplete;
 	}
 

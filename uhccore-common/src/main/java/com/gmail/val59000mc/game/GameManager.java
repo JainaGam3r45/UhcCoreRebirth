@@ -1,6 +1,7 @@
 package com.gmail.val59000mc.game;
 
 import com.gmail.val59000mc.UhcCore;
+import com.gmail.val59000mc.bridge.VersionBridge;
 import com.gmail.val59000mc.commands.*;
 import com.gmail.val59000mc.configuration.Dependencies;
 import com.gmail.val59000mc.configuration.MainConfig;
@@ -47,6 +48,7 @@ import org.bukkit.event.Listener;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
@@ -280,14 +282,21 @@ public class GameManager{
 					progress.track(nether.getName(), Environment.NETHER, PreGenerationProgress.countChunksInSquare(netherSize));
 				}
 
-				preGenerationTasks.add(chunkyPreGenerator.preGenerateChunks(overworld.getName(), overworldSize, progress));
+				preGenerationTasks.add(chunkyPreGenerator.preGenerateChunks(overworld.getName(), getNamespacedIds(overworld), overworldSize, progress));
 				if (nether != null) {
-					preGenerationTasks.add(chunkyPreGenerator.preGenerateChunks(nether.getName(), netherSize, progress));
+					preGenerationTasks.add(chunkyPreGenerator.preGenerateChunks(nether.getName(), getNamespacedIds(nether), netherSize, progress));
 				}
 
 				CompletableFuture.allOf(preGenerationTasks.stream().toArray(CompletableFuture[]::new))
-					.thenRun(() -> Bukkit.getScheduler().runTask(UhcCore.getPlugin(), () -> {
-						startWaitingPlayers();
+					.whenComplete((ignored, error) -> Bukkit.getScheduler().runTask(UhcCore.getPlugin(), () -> {
+						if (error == null) {
+							startWaitingPlayers();
+							return;
+						}
+						LOGGER.log(Level.WARNING, "Chunky pre-generation failed, falling back to the built-in pre-generator", error);
+						progress.clear();
+						// Calls startWaitingPlayers when done
+						mapLoader.generateChunks(Environment.NORMAL);
 					}));
 			} else {
 				// Calls startWaitingPlayers when done
@@ -296,6 +305,13 @@ public class GameManager{
 		} else {
 			startWaitingPlayers();
 		}
+	}
+
+	/**
+	 * Chunky-Paper resolves worlds by key, and ours live under the uhccore namespace where the server supports it.
+	 */
+	private static List<String> getNamespacedIds(World world) {
+		return Collections.singletonList(VersionBridge.UHC_WORLD_NAMESPACE + ":" + world.getName());
 	}
 
 	public void startWaitingPlayers() {
