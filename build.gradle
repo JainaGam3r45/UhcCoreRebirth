@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "io.github.jainagam3r45"
-version = "1.22.3"
+version = "1.22.4"
 
 tasks.register("copyArtifacts", Copy) {
 	from(project(":uhccore-legacy").tasks.named("shadowJar"))
