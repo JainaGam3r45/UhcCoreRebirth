@@ -154,6 +154,11 @@ public class MainConfig extends YamlFile {
 	public static final BasicOption<Boolean> DEATHMATCH_SURFACE_ENABLE = new BasicOption<>("deathmatch.center-deathmatch.surface.enable",false);
 	public static final BasicOption<Integer> DEATHMATCH_SURFACE_MAX_DEPTH = new BasicOption<>("deathmatch.center-deathmatch.surface.max-depth",10);
 	public static final BasicOption<Integer> DEATHMATCH_SURFACE_CHECK_INTERVAL = new BasicOption<>("deathmatch.center-deathmatch.surface.check-interval",5);
+	public static final BasicOption<Boolean> DEATHMATCH_MOVING_ZONE_ENABLE = new BasicOption<>("deathmatch.center-deathmatch.moving-zone.enable", false);
+	public static final BasicOption<Integer> DEATHMATCH_MOVING_ZONE_PHASE_INTERVAL = new BasicOption<>("deathmatch.center-deathmatch.moving-zone.phase-interval", 60);
+	public static final BasicOption<Integer> DEATHMATCH_MOVING_ZONE_SHRINK_DURATION = new BasicOption<>("deathmatch.center-deathmatch.moving-zone.shrink-duration", 30);
+	public static final BasicOption<Integer> DEATHMATCH_MOVING_ZONE_SHRINK_PER_PHASE = new BasicOption<>("deathmatch.center-deathmatch.moving-zone.shrink-per-phase", 20);
+	public static final BasicOption<Integer> DEATHMATCH_MOVING_ZONE_MAX_CENTER_SHIFT = new BasicOption<>("deathmatch.center-deathmatch.moving-zone.max-center-shift", 30);
 
 	public static final BasicOption<Boolean> AUTO_ASSIGN_PLAYER_TO_TEAM = new BasicOption<>("auto-assign-new-player-team",false);
 	public static final BasicOption<Boolean> FORCE_ASSIGN_SOLO_PLAYER_TO_TEAM_WHEN_STARTING = new BasicOption<>("force-assign-solo-player-to-team-when-starting",false);

@@ -35,14 +35,19 @@ public class StartDeathmatchTask implements Runnable{
 
 			// If center deathmatch move border.
 			if (shrinkBorder){
-				final int borderEndApothem = gameManager.getConfig().get(MainConfig.DEATHMATCH_END_SIZE);
-				final int borderEndSideLength = 2 * borderEndApothem;
-				final int borderTimeToShrink = gameManager.getConfig().get(MainConfig.DEATHMATCH_TIME_TO_SHRINK);
-				gameManager.getMapLoader().getUhcWorld(World.Environment.NORMAL).getWorldBorder().setSize(borderEndSideLength, borderTimeToShrink);
-				gameManager.getMapLoader().getUhcWorld(World.Environment.NORMAL).getWorldBorder().setDamageBuffer(1);
+				final World overworld = gameManager.getMapLoader().getUhcWorld(World.Environment.NORMAL);
+				if (gameManager.getConfig().get(MainConfig.DEATHMATCH_MOVING_ZONE_ENABLE)) {
+					new MovingZoneTask(gameManager, overworld).start();
+				} else {
+					final int borderEndApothem = gameManager.getConfig().get(MainConfig.DEATHMATCH_END_SIZE);
+					final int borderEndSideLength = 2 * borderEndApothem;
+					final int borderTimeToShrink = gameManager.getConfig().get(MainConfig.DEATHMATCH_TIME_TO_SHRINK);
+					overworld.getWorldBorder().setSize(borderEndSideLength, borderTimeToShrink);
+				}
+				overworld.getWorldBorder().setDamageBuffer(1);
 
 				if (gameManager.getConfig().get(MainConfig.DEATHMATCH_SURFACE_ENABLE)) {
-					new MeetupSurfaceTask(gameManager, gameManager.getMapLoader().getUhcWorld(World.Environment.NORMAL)).start();
+					new MeetupSurfaceTask(gameManager, overworld).start();
 					gameManager.broadcastInfoMessage(Lang.GAME_MEETUP_SURFACE_ENABLED);
 				}
 			}

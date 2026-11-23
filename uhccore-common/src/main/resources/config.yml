@@ -543,6 +543,20 @@ deathmatch:
     end-size: 50
     #If moving is set to true, the time in seconds for the border to shrink to end-size
     time-to-shrink: 600
+    # Battle royale style safe zone. Instead of one long shrink towards 0,0, the border closes in phases
+    # and every phase moves its center to a random spot inside the current zone, so camping a tower in
+    # the middle stops working. Players get the next zone's coordinates before it starts closing.
+    # When enabled it replaces time-to-shrink, and the zone stops shrinking at end-size.
+    moving-zone:
+      enable: false
+      # Seconds players get to rotate between the announcement and the zone closing in
+      phase-interval: 60
+      # Seconds the border takes to shrink and move during each phase
+      shrink-duration: 30
+      # Blocks taken off the zone radius every phase
+      shrink-per-phase: 20
+      # Max blocks the center moves per phase, on each axis. The new zone always fits inside the current one.
+      max-center-shift: 30
     # Keep the meetup on the surface while the border shrinks. Players hiding underground
     # or caught outside the border get teleported to a safe surface spot inside it.
     surface:
