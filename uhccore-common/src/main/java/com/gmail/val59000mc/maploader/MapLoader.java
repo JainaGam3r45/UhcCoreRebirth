@@ -101,9 +101,6 @@ public class MapLoader {
 		return arena;
 	}
 
-	/**
-	 * @return true if the world is one of the current game's worlds (overworld, nether or end)
-	 */
 	public boolean isUhcWorld(@Nullable World world) {
 		if (world == null) {
 			return false;
@@ -255,8 +252,9 @@ public class MapLoader {
 		boolean useSeedList = gm.getConfig().get(MainConfig.PICK_RANDOM_SEED_FROM_LIST) && !seeds.isEmpty();
 		boolean copyMapFromList = !useSeedList && gm.getConfig().get(MainConfig.PICK_RANDOM_WORLD_FROM_LIST) && !worlds.isEmpty();
 
-		// Copied maps go to the world container root. A namespaced world would load from
-		// world/dimensions/uhccore on Paper 26+ and generate fresh terrain instead.
+		// copyWorld drops the map in the world container root, which is where plain-named worlds
+		// load from up to 1.21. Builds that keep worlds under world/dimensions never pick the copy
+		// up, and a uhccore key would only bury it one folder deeper.
 		WorldCreator wc = copyMapFromList
 			? new WorldCreator(worldName)
 			: VersionBridgeProvider.getBridge().createUhcWorldCreator(worldName);

@@ -47,9 +47,8 @@ public abstract class ChunkLoaderTask implements Runnable {
 	}
 
 	/**
-	 * Asks the version bridge instead of VersionUtils: chunk loads only go async on Paper, and
-	 * Paper kills sync chunk loads coming from another thread. The Modern bridge talks to Paper
-	 * directly because PaperLib 1.0.8 can't parse 26.x and would quietly fall back to sync.
+	 * Paper kills sync chunk loads coming from another thread, so this has to know whether loads
+	 * really go async. See ModernVersionBridge for why that isn't simply PaperLib.isPaper() anymore.
 	 */
 	public static boolean canRunOffMainThread() {
 		return VersionBridgeProvider.getBridge().supportsAsyncChunkLoading();

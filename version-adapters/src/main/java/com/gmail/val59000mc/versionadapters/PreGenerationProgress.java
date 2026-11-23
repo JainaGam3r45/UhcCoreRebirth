@@ -17,13 +17,7 @@ public final class PreGenerationProgress {
 
 	private final List<WorldProgress> worlds = new ArrayList<>();
 
-	/**
-	 * Starts (or restarts) tracking a world.
-	 *
-	 * @param worldName the Bukkit world name
-	 * @param environment the world's environment, used to pick the display name
-	 * @param totalChunks how many chunks the pre-generation will go through
-	 */
+	/** Resets the entry if the world was already tracked. */
 	public synchronized void track(String worldName, Environment environment, long totalChunks) {
 		WorldProgress progress = find(worldName);
 		if (progress == null) {

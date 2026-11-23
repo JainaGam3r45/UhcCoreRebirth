@@ -19,7 +19,7 @@ import com.gmail.val59000mc.utils.UniversalSound;
 /**
  * Battle royale style zone for the center deathmatch. Instead of one long shrink towards 0,0
  * the border closes in phases, and every phase drifts its center to a random spot inside the
- * current zone. Camping a sky tower in the middle stops being a strategy.
+ * current zone.
  * <p>
  * Each new zone fits entirely inside the previous one and the transition interpolates center and
  * size together, so anyone already standing in the announced zone is never caught by the wall.

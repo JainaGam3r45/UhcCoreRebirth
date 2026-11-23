@@ -183,8 +183,8 @@ public class LocationUtils {
 	 * Returns a random spawn location that avoids blacklisted biomes and keeps its distance from other spawns.
 	 *
 	 * <p>
-	 *     When nothing fits, the rules get relaxed one at a time: first the biome blacklist
-	 *     goes, then the minimum distance, and only then a blind random spot like before.
+	 *     Fallback order when nothing fits: drop the biome blacklist, then the min distance,
+	 *     then any random spot.
 	 * </p>
 	 *
 	 * @param world the world to spawn in

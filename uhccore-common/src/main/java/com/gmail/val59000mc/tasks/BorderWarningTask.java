@@ -123,7 +123,7 @@ public class BorderWarningTask implements Runnable {
 			}
 		}
 
-		// Left the danger zone, logged out, died or went to another world.
+		// Out of the warning distance, logged out, died or changed world.
 		Iterator<UUID> it = alerts.keySet().iterator();
 		while (it.hasNext()) {
 			UUID playerId = it.next();
@@ -219,9 +219,12 @@ public class BorderWarningTask implements Runnable {
 	}
 
 	private static Display parseDisplay(String value) {
+		if (value == null) {
+			return Display.ACTIONBAR;
+		}
 		try {
 			return Display.valueOf(value.trim().toUpperCase(Locale.ROOT));
-		} catch (IllegalArgumentException | NullPointerException ex) {
+		} catch (IllegalArgumentException ex) {
 			LOGGER.warning("Invalid border-warning.display '" + value + "', using ACTIONBAR. Pick one of ACTIONBAR, BOSSBAR, CHAT or TITLE");
 			return Display.ACTIONBAR;
 		}

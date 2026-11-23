@@ -20,12 +20,11 @@ import org.bukkit.scoreboard.Team;
 
 public interface VersionBridge {
 
-	/** Namespace UHC worlds get registered under where the server supports world keys. */
 	String UHC_WORLD_NAMESPACE = "uhccore";
 
 	// World operations
 	/**
-	 * Creator for a UHC world. Servers with namespaced world keys (Paper 1.16+) register it as
+	 * Creator for a UHC world. Servers with namespaced world keys (Paper 1.16.5+) register it as
 	 * {@code uhccore:<worldName>}, so Paper builds that store worlds under
 	 * {@code world/dimensions/<namespace>/} keep ours apart from everything else.
 	 * The world name stays {@code worldName} either way.
@@ -87,8 +86,6 @@ public interface VersionBridge {
 	void sendActionBar(Player player, String message);
 
 	/**
-	 * Shows a title and subtitle.
-	 *
 	 * @return false when the server has no title API at all, so the caller can fall back to chat
 	 */
 	@SuppressWarnings("deprecation")
