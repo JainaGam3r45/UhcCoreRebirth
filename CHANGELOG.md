@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.22.4] - 2026-11-22
+
+### Bug fixes
+
+- 1.22.3 never got out of LOADING on Paper/Purpur 26.x and threw a
+`NullPointerException` in `GameManager.loadNewGame`. It created the UHC worlds
+under the `uhccore` namespace, 26.x registers those as `uhccore_<uuid>`, and
+the plugin looks its worlds up by the plain `<uuid>` name, so the overworld came
+back null. Worlds use plain names again. The folder cleanup stays: it finds
+worlds under `world/dimensions/minecraft`, and the first start on 1.22.4 removes
+what 1.22.3 left in `world/dimensions/uhccore`
+- Every save that added new keys to `config.yml` doubled the blank lines
+between settings. Saves keep the gaps as they are now, and an already doubled
+file gets collapsed the next time the plugin saves it
+
 ## [1.22.3] - 2026-11-22
 
 ### New features
