@@ -14,7 +14,6 @@ import org.bukkit.Keyed;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
-import org.bukkit.WorldCreator;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.block.Block;
@@ -64,16 +63,6 @@ public class ModernVersionBridge implements VersionBridge {
 			return world.getChunkAtAsync(chunkX, chunkZ, true);
 		}
 		return CompletableFuture.completedFuture(world.getChunkAt(chunkX, chunkZ));
-	}
-
-	@Override
-	public WorldCreator createUhcWorldCreator(String worldName) {
-		try {
-			return WorldCreator.ofKey(new NamespacedKey(UHC_WORLD_NAMESPACE, worldName));
-		} catch (NoSuchMethodError e) {
-			// Spigot 1.21 has no ofKey, only Paper does
-			return new WorldCreator(worldName);
-		}
 	}
 
 	@Override

@@ -1,7 +1,6 @@
 package com.gmail.val59000mc.game;
 
 import com.gmail.val59000mc.UhcCore;
-import com.gmail.val59000mc.bridge.VersionBridge;
 import com.gmail.val59000mc.commands.*;
 import com.gmail.val59000mc.configuration.Dependencies;
 import com.gmail.val59000mc.configuration.MainConfig;
@@ -308,10 +307,10 @@ public class GameManager{
 	}
 
 	/**
-	 * Chunky-Paper resolves worlds by key, and ours live under the uhccore namespace where the server supports it.
+	 * Chunky-Paper resolves worlds by key, which for our plain-named worlds is minecraft:<name>.
 	 */
 	private static List<String> getNamespacedIds(World world) {
-		return Collections.singletonList(VersionBridge.UHC_WORLD_NAMESPACE + ":" + world.getName());
+		return Collections.singletonList("minecraft:" + world.getName());
 	}
 
 	public void startWaitingPlayers() {

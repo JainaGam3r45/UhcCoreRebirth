@@ -6,7 +6,6 @@ import java.util.concurrent.CompletableFuture;
 import io.papermc.lib.PaperLib;
 import org.bukkit.Chunk;
 import org.bukkit.World;
-import org.bukkit.WorldCreator;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.LivingEntity;
@@ -20,19 +19,7 @@ import org.bukkit.scoreboard.Team;
 
 public interface VersionBridge {
 
-	String UHC_WORLD_NAMESPACE = "uhccore";
-
 	// World operations
-	/**
-	 * Creator for a UHC world. Servers with namespaced world keys (Paper 1.16.5+) register it as
-	 * {@code uhccore:<worldName>}, so Paper builds that store worlds under
-	 * {@code world/dimensions/<namespace>/} keep ours apart from everything else.
-	 * The world name stays {@code worldName} either way.
-	 */
-	default WorldCreator createUhcWorldCreator(String worldName) {
-		return new WorldCreator(worldName);
-	}
-
 	void setWorldBorder(World world, double centerX, double centerZ, double sideLength);
 
 	void setGameRule(World world, String gameRule, Object value);

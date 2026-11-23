@@ -34,8 +34,6 @@ import org.bukkit.WorldType;
 import org.bukkit.configuration.InvalidConfigurationException;
 
 import com.gmail.val59000mc.UhcCore;
-import com.gmail.val59000mc.bridge.VersionBridge;
-import com.gmail.val59000mc.bridge.VersionBridgeProvider;
 import com.gmail.val59000mc.configuration.MainConfig;
 import com.gmail.val59000mc.configuration.YamlFile;
 import com.gmail.val59000mc.game.GameManager;
@@ -66,6 +64,9 @@ public class MapLoader {
 	public final static String LOG_ADMIN_COMMANDS = "logAdminCommands";
 
 	private static final String MINECRAFT_NAMESPACE = "minecraft";
+	// 1.22.3 created worlds under this namespace. Paper 26.x then registers them as uhccore_<uuid>, which
+	// broke every lookup by name, so they are plain again. Only kept to sweep what 1.22.3 left behind.
+	private static final String LEFTOVER_NAMESPACE = "uhccore";
 
 	private final MainConfig config;
 	private final Map<Environment, String> worldUuids;
@@ -216,7 +217,7 @@ public class MapLoader {
 	private void deleteOrphanWorlds() {
 		Set<Path> loadedFolders = getLoadedWorldFolders();
 
-		for (File worldDir : listSubdirectories(getDimensionsFolder(VersionBridge.UHC_WORLD_NAMESPACE))) {
+		for (File worldDir : listSubdirectories(getDimensionsFolder(LEFTOVER_NAMESPACE))) {
 			deleteOrphanWorld(worldDir, loadedFolders);
 		}
 
@@ -252,12 +253,11 @@ public class MapLoader {
 		boolean useSeedList = gm.getConfig().get(MainConfig.PICK_RANDOM_SEED_FROM_LIST) && !seeds.isEmpty();
 		boolean copyMapFromList = !useSeedList && gm.getConfig().get(MainConfig.PICK_RANDOM_WORLD_FROM_LIST) && !worlds.isEmpty();
 
-		// copyWorld drops the map in the world container root, which is where plain-named worlds
-		// load from up to 1.21. Builds that keep worlds under world/dimensions never pick the copy
-		// up, and a uhccore key would only bury it one folder deeper.
-		WorldCreator wc = copyMapFromList
-			? new WorldCreator(worldName)
-			: VersionBridgeProvider.getBridge().createUhcWorldCreator(worldName);
+		// Plain name on purpose: the world has to be called exactly worldName, WorldInitEvent, Chunky and
+		// getUhcWorld all look it up by that. Namespaced keys end up as "<namespace>_<name>" on Paper 26.x.
+		// Map copies land in the world container root, builds that keep worlds under world/dimensions
+		// don't pick them up either way.
+		WorldCreator wc = new WorldCreator(worldName);
 		wc.generateStructures(config.get(MainConfig.GENERATE_STRUCTURES));
 		if (env == Environment.NORMAL) {
 			final String cgOverworld = config.get(MainConfig.CHUNK_GENERATOR_OVERWORLD);
@@ -367,12 +367,7 @@ public class MapLoader {
 			final List<File> worldDirs = findWorldFolders(uuid, worldFolders.get(env));
 			if(!worldDirs.isEmpty()){
 				LOGGER.info("Loading existing world : " + worldDirs.get(0).getPath());
-				// Has to be opened under the key it was created with, otherwise Paper 26+
-				// looks in another dimensions folder and generates a brand new world.
-				WorldCreator creator = isInDimensionsFolder(worldDirs.get(0), VersionBridge.UHC_WORLD_NAMESPACE)
-					? VersionBridgeProvider.getBridge().createUhcWorldCreator(uuid)
-					: new WorldCreator(uuid);
-				World loadedWorld = Bukkit.getServer().createWorld(creator.environment(env));
+				World loadedWorld = Bukkit.getServer().createWorld(new WorldCreator(uuid).environment(env));
 				LOGGER.info("World seed: " + loadedWorld.getSeed());
 				worldFolders.put(env, toStoragePath(loadedWorld.getWorldFolder()));
 			}else{
@@ -411,7 +406,7 @@ public class MapLoader {
 		if (stored != null) {
 			candidates.add(stored);
 		}
-		File uhcDimensions = getDimensionsFolder(VersionBridge.UHC_WORLD_NAMESPACE);
+		File uhcDimensions = getDimensionsFolder(LEFTOVER_NAMESPACE);
 		if (uhcDimensions != null) {
 			candidates.add(normalize(new File(uhcDimensions, worldName)));
 		}
@@ -491,11 +486,6 @@ public class MapLoader {
 			return null;
 		}
 		return new File(new File(mainWorldFolder, "dimensions"), namespace);
-	}
-
-	private boolean isInDimensionsFolder(File folder, String namespace) {
-		File dimensions = getDimensionsFolder(namespace);
-		return dimensions != null && normalize(folder).startsWith(normalize(dimensions));
 	}
 
 	private boolean isMainWorld(World world) {

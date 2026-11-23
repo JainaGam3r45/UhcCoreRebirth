@@ -1,16 +1,13 @@
 package com.gmail.val59000mc.bridge;
 
 import com.gmail.val59000mc.utils.VersionUtils;
-import java.lang.reflect.Method;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.GameRule;
-import org.bukkit.NamespacedKey;
 import org.bukkit.World;
-import org.bukkit.WorldCreator;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.LivingEntity;
@@ -26,37 +23,6 @@ public class DefaultVersionBridge implements VersionBridge {
 
 	private static final Logger LOGGER = Logger.getLogger(DefaultVersionBridge.class.getCanonicalName());
 	private static volatile boolean actionBarUnsupported = false;
-	private static volatile boolean worldCreatorOfKeyLookedUp = false;
-	private static volatile Method worldCreatorOfKey;
-
-	@Override
-	public WorldCreator createUhcWorldCreator(String worldName) {
-		Method ofKey = findWorldCreatorOfKey();
-		if (ofKey != null) {
-			try {
-				return (WorldCreator) ofKey.invoke(null, new NamespacedKey(UHC_WORLD_NAMESPACE, worldName));
-			} catch (ReflectiveOperationException | RuntimeException e) {
-				LOGGER.log(Level.WARNING, "Unable to create namespaced world " + worldName + ", falling back to a plain world name", e);
-			}
-		}
-		return new WorldCreator(worldName);
-	}
-
-	private static Method findWorldCreatorOfKey() {
-		if (!worldCreatorOfKeyLookedUp) {
-			// WorldCreator#ofKey is Paper-only (1.16.5+) and this jar compiles against Spigot 1.15.2.
-			// NamespacedKey itself is 1.12+, hence the version gate before touching it.
-			if (VersionUtils.isAtLeast(16)) {
-				try {
-					worldCreatorOfKey = WorldCreator.class.getMethod("ofKey", NamespacedKey.class);
-				} catch (NoSuchMethodException ignored) {
-					// Spigot, plain world names it is
-				}
-			}
-			worldCreatorOfKeyLookedUp = true;
-		}
-		return worldCreatorOfKey;
-	}
 
 	@Override
 	public void setWorldBorder(World world, double centerX, double centerZ, double sideLength) {
