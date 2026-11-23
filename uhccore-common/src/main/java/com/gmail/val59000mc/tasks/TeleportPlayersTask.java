@@ -47,12 +47,18 @@ public class TeleportPlayersTask implements Runnable{
 
 		// Teleporting into an unloaded chunk reads it from disk right there on the main thread.
 		// Loading it first through Paper keeps a big scatter from turning into one long lag spike.
-		VersionBridgeProvider.getBridge().getChunkAtAsync(destination.getWorld(), destination.getBlockX() >> 4, destination.getBlockZ() >> 4).whenComplete((chunk, error) -> {
-			if (error != null) {
-				LOGGER.log(Level.WARNING, "Unable to preload the spawn chunk of team #" + team.getTeamNumber(), error);
-			}
-			MainThread.execute(this::teleportMembers);
-		});
+		try {
+			VersionBridgeProvider.getBridge().getChunkAtAsync(destination.getWorld(), destination.getBlockX() >> 4, destination.getBlockZ() >> 4).whenComplete((chunk, error) -> {
+				if (error != null) {
+					LOGGER.log(Level.WARNING, "Unable to preload the spawn chunk of team #" + team.getTeamNumber(), error);
+				}
+				MainThread.execute(this::teleportMembers);
+			});
+		} catch (RuntimeException e) {
+			// A throw here would skip teleportMembers and the game would never leave STARTING.
+			LOGGER.log(Level.WARNING, "Unable to preload the spawn chunk of team #" + team.getTeamNumber(), e);
+			teleportMembers();
+		}
 	}
 
 	private void teleportMembers() {
