@@ -1,5 +1,29 @@
 # Changelog
 
+## [1.23.0] - 2026-11-23
+
+### New features
+
+- Kits can be plain YAML now (`material`, `name`, `lore`, `slot`, `glow`,
+`items`). Old JSON kits still load, and both styles can share one file
+- The kit menu is set up in a `gui` section of `kits.yml`: title, rows, filler,
+close button, status texts and sounds. Hex colors (`&#RRGGBB`) work in kits and
+fall back to the closest classic color before 1.16
+- Every sound in `config.yml` has the same `enabled`, `name`, `volume` and
+`pitch`. Old values like `sound: true` still work, and a name your server
+doesn't know logs one warning and uses the default
+- The moving zone gets `announce-sound` and `closing-sound`, and the border
+warning gets `title-stay` and the two boss bar colors
+- Config files keep your comments. Missing options are pasted in with their
+comments, options without a comment get one, and nothing you wrote is touched
+
+### Bug fixes
+
+- Shift-click could move items into the kit menu. Clicks and drags in it are
+cancelled now
+- Paper 26.x warned on every new world because the plugin saved it by hand with
+autosave on. It only saves by hand when autosave is off
+
 ## [1.22.4] - 2026-11-22
 
 ### Bug fixes
