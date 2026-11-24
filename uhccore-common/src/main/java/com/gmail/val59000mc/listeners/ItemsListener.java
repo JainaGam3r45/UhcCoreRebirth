@@ -120,6 +120,15 @@ public class ItemsListener implements Listener {
 		Player player = (Player) event.getWhoClicked();
 		UhcPlayer uhcPlayer = playerManager.getUhcPlayer(player);
 
+		// The kit menu is recognised by its inventory holder, not by its title or the item names:
+		// both are configurable now. Every click in it is cancelled, shift clicks and number keys
+		// from the player's own inventory included, otherwise items could be dropped into the menu.
+		if (KitsManager.isKitMenu(event.getInventory())){
+			event.setCancelled(true);
+			KitsManager.handleKitMenuClick(event, uhcPlayer);
+			return;
+		}
+
 		// Stop players from moving game items in their inventory.
 		// Above item == null check as item is null on hotbar swap.
 		if (gameManager.getGameState() == GameState.WAITING && event.getAction() == InventoryAction.HOTBAR_SWAP){
@@ -154,21 +163,6 @@ public class ItemsListener implements Listener {
 		if (event.getView().getTitle().equals(Lang.TEAM_INVENTORY_TEAM_VIEW)){
 			if (item.getType() == UniversalMaterial.PLAYER_HEAD_ITEM.getType() && item.hasItemMeta()){
 				event.setCancelled(true);
-			}
-		}
-
-		// Click on a player head to join a team
-		if(event.getView().getTitle().equals(Lang.ITEMS_KIT_INVENTORY)){
-			if(KitsManager.isKitItem(item)){
-				event.setCancelled(true);
-				Kit kit = KitsManager.getKitByName(item.getItemMeta().getDisplayName());
-				if(kit.canBeUsedBy(player, config)){
-					uhcPlayer.setKit(kit);
-					uhcPlayer.sendMessage(Lang.ITEMS_KIT_SELECTED.replace("%kit%", kit.getName()));
-				}else{
-					uhcPlayer.sendMessage(Lang.ITEMS_KIT_NO_PERMISSION);
-				}
-				player.closeInventory();
 			}
 		}
 
@@ -247,6 +241,11 @@ public class ItemsListener implements Listener {
 
 	@EventHandler(priority = EventPriority.HIGHEST)
 	public void onInventoryDrag(InventoryDragEvent event) {
+		if (KitsManager.isKitMenu(event.getInventory())) {
+			event.setCancelled(true);
+			return;
+		}
+
 		handleBrewingInventory(event);
 	}
 

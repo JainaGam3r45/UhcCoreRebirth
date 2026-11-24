@@ -1,26 +1,122 @@
 # Edit kits here, to remove all kits write only an empty node: "kits: {}"
+#
+# Colors work everywhere text is allowed: legacy codes (&a, &l...) and hex (&#RRGGBB).
+# Servers older than 1.16 have no hex, there it becomes the closest classic color.
+#
+# Old kits.yml files keep working. Kits written with JSON strings, like
+#   symbol: { item: '{"type":"STONE_PICKAXE"}', name: Kit Tools }
+#   items: [ '{"type":"STONE_SWORD"}' ]
+# still load as before. You can mix both styles in the same file, even inside one items list.
+# To get the JSON of an item you are holding use '/iteminfo' (Permission: 'uhc-core.commands.iteminfo').
 kits:
-  # Choose a keyword for the kit (not displayed in game)
+  # Choose a keyword for the kit (not displayed in game).
+  # With 'enable-kits-permissions' on, players need the permission uhc-core.kit.<keyword>
   tools:
     symbol:
-      #Choose what item will represent the kit
-      item: '{"type":"STONE_PICKAXE"}'
-      #Choose the name of the item
-      name: Kit Tools
-    # Write a list of item following the JSON item syntax
-    # To view the correct item item data you can use '/iteminfo' in game (Permission: 'uhc-core.commands.iteminfo')
+      # What represents the kit in the menu. Modern material names work on every version
+      # (GRAY_STAINED_GLASS_PANE on 1.8 is turned into the right stained glass pane).
+      material: STONE_PICKAXE
+      name: '&a&lKit Tools'
+      # %status% shows "selected", "click to select" or "permission required" for the player looking at the menu.
+      # The texts are in the gui.status section below.
+      # Without a lore the menu lists the items of the kit.
+      lore:
+        - '&7A basic set of stone tools.'
+        - ''
+        - '&f1 x stone sword'
+        - '&f1 x stone pickaxe'
+        - '&f1 x stone axe'
+        - ''
+        - '%status%'
+      # Gives the icon an enchanted shine without listing any enchantment.
+      glow: false
+      # Slot in the menu (0 is the top left corner). Leave it out to use the first free slot.
+      # slot: 10
+    # The items the player receives, written as plain YAML.
     items:
-      - '{"type":"STONE_SWORD"}'
-      - '{"type":"STONE_PICKAXE"}'
-      - '{"type":"STONE_AXE"}'
+      - material: STONE_SWORD
+      - material: STONE_PICKAXE
+      - material: STONE_AXE
     enabled: true
 
   # Write other kits
   ench:
     symbol:
-      item: '{"type":"ENCHANTED_BOOK"}'
-      name: Enchanting
+      material: ENCHANTED_BOOK
+      name: '&#55AAFF&lEnchanting'
+      lore:
+        - '&7Paper and leather to get started.'
+        - ''
+        - '%status%'
+      glow: true
+      # For resource packs and custom item plugins (1.14+, ignored on older versions).
+      # custom-model-data: 1001
     items:
-      - '{"type":"PAPER","amount":15}'
-      - '{"type":"LEATHER","amount":5}'
+      - material: PAPER
+        amount: 15
+      - material: LEATHER
+        amount: 5
+      # Other keys an item can have:
+      #   name: '&bFancy name'
+      #   lore: ['&7First line', '&7Second line']
+      #   enchantments:        # 1.13+ names like sharpness, on 1.8-1.12 the old ones like DAMAGE_ALL
+      #     sharpness: 2
+      #   flags: [HIDE_ENCHANTS]
+      #   unbreakable: true
+      #   custom-model-data: 1001
     enabled: true
+
+# The kit selection menu. Without this section it is the plain 6 row chest it always was.
+gui:
+  # Title of the menu, colors and hex allowed. If you leave it out the 'items.kit-inventory' text
+  # of the language file is used. Servers before 1.14 cut titles at 32 characters.
+  # title: '&#55AAFF&lKit selection'
+
+  # Number of rows, from 1 to 6. Anything else falls back to 6.
+  rows: 3
+
+  # Decoration for the empty slots. Kits and the close button always go on top of it.
+  filler:
+    enabled: true
+    material: GRAY_STAINED_GLASS_PANE
+    name: '&r'
+    # Numbers and ranges. Kits without a 'slot' never get placed on these. Leave 'slots' out to fill every empty slot.
+    slots: [0-8, 18-26]
+
+  # Closes the menu.
+  close_button:
+    enabled: true
+    material: BARRIER
+    name: '&cClose'
+    slot: 22
+
+  # Same four settings as every sound in config.yml: enabled, name, volume (1.0 is normal) and pitch (0.5 to 2.0).
+  # The names below work on every Minecraft version, any other sound name of your version is fine too.
+  # A name this server doesn't know is reported once and the sound falls back to the default one for that action
+  # (NOTE_PLING for success, NOTE_BASS for error, CLICK for click).
+  # A sound this section doesn't mention stays silent.
+  sounds:
+    # Picking a kit
+    success:
+      enabled: true
+      name: NOTE_PLING
+      volume: 1.0
+      pitch: 1.0
+    # Clicking a kit the player has no permission for
+    error:
+      enabled: true
+      name: NOTE_BASS
+      volume: 1.0
+      pitch: 1.0
+    # Clicking the close button or the filler
+    click:
+      enabled: true
+      name: CLICK
+      volume: 1.0
+      pitch: 1.0
+
+  # What %status% turns into in the lore of a kit.
+  status:
+    selected: '&aSelected'
+    available: '&eClick to select'
+    no-permission: '&cPermission required'

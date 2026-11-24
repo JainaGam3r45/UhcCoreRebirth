@@ -5,6 +5,7 @@ import org.apache.commons.lang.Validate;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,6 +14,7 @@ public class Kit{
 	private final String key;
 	private String name;
 	private ItemStack symbol;
+	private Integer slot;
 	private final List<ItemStack> items;
 
 	private Kit(String key){
@@ -30,6 +32,14 @@ public class Kit{
 
 	public ItemStack getSymbol(){
 		return symbol;
+	}
+
+	/**
+	 * @return the slot this kit asked for in the kit menu, or null to let the menu place it.
+	 */
+	@Nullable
+	public Integer getSlot(){
+		return slot;
 	}
 
 	public ItemStack[] getItems(){
@@ -74,6 +84,16 @@ public class Kit{
 		public Builder setSymbol(ItemStack symbol){
 			Validate.notNull(symbol);
 			kit.symbol = symbol;
+			return this;
+		}
+
+		/**
+		 * Method used to set the slot the kit wants in the selection inventory.
+		 * @param slot The slot, or null to let the menu pick the first free one.
+		 * @return Returns this kit builder.
+		 */
+		public Builder setSlot(@Nullable Integer slot){
+			kit.slot = slot;
 			return this;
 		}
 

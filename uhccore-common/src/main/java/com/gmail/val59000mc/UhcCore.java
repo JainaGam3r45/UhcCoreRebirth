@@ -38,8 +38,9 @@ public class UhcCore extends JavaPlugin{
 		forwardingLogger = PluginForwardingHandler.createForwardingLogger(this);
 		gameManager = new GameManager();
 
-		gameManager.loadConfig();
+		// Adapters first: loadConfig() builds the kits, and their icons go through the item display adapter.
 		versionAdapterLoader = VersionAdapterLoader.loadAll(getClassLoader());
+		gameManager.loadConfig();
 		if (gameManager.getConfig().get(MainConfig.CHECK_FOR_UPDATES)) {
 			UpdateChecker.checkForUpdates(this);
 		}
