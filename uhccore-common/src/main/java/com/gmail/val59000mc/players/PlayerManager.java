@@ -568,6 +568,15 @@ public class PlayerManager {
 		playSoundToAll(sound, 1, 1);
 	}
 
+	/**
+	 * Plays a configured sound to every player, does nothing if the config has it disabled.
+	 */
+	public void playSoundToAll(ConfigSound sound) {
+		if (sound.isEnabled()) {
+			playSoundToAll(sound.getSound(), sound.getVolume(), sound.getPitch());
+		}
+	}
+
 	public void playSoundToAll(Sound sound, float volume, float pitch) {
 		for (UhcPlayer player : getPlayersList()) {
 			playSoundTo(player, sound, volume, pitch);

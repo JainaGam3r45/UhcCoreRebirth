@@ -19,6 +19,7 @@ import com.gmail.val59000mc.configuration.options.ListOption;
 import com.gmail.val59000mc.configuration.options.LootConfigOption;
 import com.gmail.val59000mc.configuration.options.Option;
 import com.gmail.val59000mc.configuration.options.PotionEffectListOption;
+import com.gmail.val59000mc.configuration.options.SoundOption;
 import com.gmail.val59000mc.configuration.options.VeinConfigOption;
 import com.gmail.val59000mc.game.GameManager;
 import com.gmail.val59000mc.scenarios.Scenario;
@@ -96,7 +97,7 @@ public class MainConfig extends YamlFile {
 	public static final BasicOption<Boolean> ENABLE_GOLDEN_HEADS = new BasicOption<>("customize-game-behavior.enable-golden-heads",false);
 	public static final BasicOption<Boolean> PLACE_HEAD_ON_FENCE = new BasicOption<>("customize-game-behavior.place-head-on-fence",false);
 	public static final BasicOption<Boolean> STRIKE_LIGHTNING_ON_DEATH = new BasicOption<>("customize-game-behavior.stike-lightning-on-death",true);
-	public static final BasicOption<String> PLAYER_DEATH_SOUND = new BasicOption<>("customize-game-behavior.player-death-sound", UniversalSound.CONFIG_VALUE_DEFAULT);
+	public static final SoundOption PLAYER_DEATH_SOUND = new SoundOption("customize-game-behavior.player-death-sound", UniversalSound.WITHER_SPAWN);
 	public static final BasicOption<Boolean> ALLOW_GHAST_TEARS_DROPS = new BasicOption<>("customize-game-behavior.allow-ghast-tears-drops",true);
 	public static final BasicOption<Integer> MAX_BUILDING_HEIGHT = new BasicOption<>("customize-game-behavior.max-building-height", -1);
 	public static final BasicOption<Boolean> ENABLE_NETHER = new BasicOption<>("customize-game-behavior.enable-nether",false);
@@ -138,7 +139,10 @@ public class MainConfig extends YamlFile {
 	public static final BasicOption<Integer> BORDER_WARNING_DISTANCE = new BasicOption<>("border-warning.warning-distance", 30);
 	public static final BasicOption<Integer> BORDER_WARNING_DANGER_DISTANCE = new BasicOption<>("border-warning.danger-distance", 10);
 	public static final BasicOption<String> BORDER_WARNING_DISPLAY = new BasicOption<>("border-warning.display", "ACTIONBAR");
-	public static final BasicOption<Boolean> BORDER_WARNING_SOUND = new BasicOption<>("border-warning.sound", true);
+	public static final SoundOption BORDER_WARNING_SOUND = new SoundOption("border-warning.sound", UniversalSound.NOTE_PLING);
+	public static final BasicOption<Integer> BORDER_WARNING_TITLE_STAY = new BasicOption<>("border-warning.title-stay", 25);
+	public static final BasicOption<String> BORDER_WARNING_BOSSBAR_WARNING_COLOR = new BasicOption<>("border-warning.bossbar-warning-color", "YELLOW");
+	public static final BasicOption<String> BORDER_WARNING_BOSSBAR_DANGER_COLOR = new BasicOption<>("border-warning.bossbar-danger-color", "RED");
 
 	// Deathmatch
 	public static final BasicOption<Boolean> ENABLE_DEATHMATCH = new BasicOption<>("deathmatch.enable",true);
@@ -159,6 +163,8 @@ public class MainConfig extends YamlFile {
 	public static final BasicOption<Integer> DEATHMATCH_MOVING_ZONE_SHRINK_DURATION = new BasicOption<>("deathmatch.center-deathmatch.moving-zone.shrink-duration", 30);
 	public static final BasicOption<Integer> DEATHMATCH_MOVING_ZONE_SHRINK_PER_PHASE = new BasicOption<>("deathmatch.center-deathmatch.moving-zone.shrink-per-phase", 20);
 	public static final BasicOption<Integer> DEATHMATCH_MOVING_ZONE_MAX_CENTER_SHIFT = new BasicOption<>("deathmatch.center-deathmatch.moving-zone.max-center-shift", 30);
+	public static final SoundOption DEATHMATCH_MOVING_ZONE_ANNOUNCE_SOUND = new SoundOption("deathmatch.center-deathmatch.moving-zone.announce-sound", UniversalSound.NOTE_PLING);
+	public static final SoundOption DEATHMATCH_MOVING_ZONE_CLOSING_SOUND = new SoundOption("deathmatch.center-deathmatch.moving-zone.closing-sound", UniversalSound.ENDERDRAGON_GROWL);
 
 	public static final BasicOption<Boolean> AUTO_ASSIGN_PLAYER_TO_TEAM = new BasicOption<>("auto-assign-new-player-team",false);
 	public static final BasicOption<Boolean> FORCE_ASSIGN_SOLO_PLAYER_TO_TEAM_WHEN_STARTING = new BasicOption<>("force-assign-solo-player-to-team-when-starting",false);

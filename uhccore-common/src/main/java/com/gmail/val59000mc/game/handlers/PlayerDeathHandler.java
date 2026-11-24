@@ -2,7 +2,6 @@ package com.gmail.val59000mc.game.handlers;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -33,8 +32,6 @@ import com.gmail.val59000mc.scenarios.scenariolisteners.SilentNightListener;
 import com.gmail.val59000mc.scenarios.scenariolisteners.TeamInventoryListener;
 import com.gmail.val59000mc.tasks.TimeBeforeSendBungeeTask;
 import com.gmail.val59000mc.utils.UniversalMaterial;
-import com.gmail.val59000mc.utils.UniversalSound;
-import com.gmail.val59000mc.utils.UniversalSound.SoundParseException;
 import com.gmail.val59000mc.utils.snapshot.ItemStackSnapshot;
 import com.gmail.val59000mc.utils.snapshot.Snapshot;
 import com.gmail.val59000mc.utils.VersionUtils;
@@ -164,12 +161,7 @@ public class PlayerDeathHandler {
 			playerManager.strikeLightning(uhcPlayer);
 		}
 
-		try {
-			UniversalSound.parse(config.get(MainConfig.PLAYER_DEATH_SOUND), UniversalSound.WITHER_SPAWN)
-				.ifPresent(playerManager::playSoundToAll);
-		} catch (SoundParseException e) {
-			LOGGER.log(Level.WARNING, "Unable to parse player death sound", e);
-		}
+		playerManager.playSoundToAll(config.get(MainConfig.PLAYER_DEATH_SOUND));
 
 		if (shouldAnnounceEliminations()) {
 			gameManager.broadcastInfoMessage(Lang.PLAYERS_ELIMINATED.replace("%player%", uhcPlayer.getName()));

@@ -14,7 +14,7 @@ import com.gmail.val59000mc.configuration.MainConfig;
 import com.gmail.val59000mc.game.GameManager;
 import com.gmail.val59000mc.game.GameState;
 import com.gmail.val59000mc.languages.Lang;
-import com.gmail.val59000mc.utils.UniversalSound;
+import com.gmail.val59000mc.utils.ConfigSound;
 
 /**
  * Battle royale style zone for the center deathmatch. Instead of one long shrink towards 0,0
@@ -38,6 +38,8 @@ public class MovingZoneTask implements Runnable {
 	private final int shrinkPerPhase;
 	private final int maxCenterShift;
 	private final double endApothem;
+	private final ConfigSound announceSound;
+	private final ConfigSound closingSound;
 
 	private BukkitTask task;
 	private boolean shrinking;
@@ -57,6 +59,8 @@ public class MovingZoneTask implements Runnable {
 		this.shrinkPerPhase = Math.max(1, config.get(MainConfig.DEATHMATCH_MOVING_ZONE_SHRINK_PER_PHASE));
 		this.maxCenterShift = Math.max(0, config.get(MainConfig.DEATHMATCH_MOVING_ZONE_MAX_CENTER_SHIFT));
 		this.endApothem = Math.max(1, config.get(MainConfig.DEATHMATCH_END_SIZE));
+		this.announceSound = config.get(MainConfig.DEATHMATCH_MOVING_ZONE_ANNOUNCE_SOUND);
+		this.closingSound = config.get(MainConfig.DEATHMATCH_MOVING_ZONE_CLOSING_SOUND);
 	}
 
 	public void start() {
@@ -92,7 +96,7 @@ public class MovingZoneTask implements Runnable {
 				shrinking = true;
 				secondsLeft = shrinkDuration;
 				gameManager.broadcastInfoMessage(formatZoneMessage(Lang.DEATHMATCH_ZONE_CLOSING, 0));
-				gameManager.getPlayerManager().playSoundToAll(UniversalSound.ENDERDRAGON_GROWL.getSound());
+				gameManager.getPlayerManager().playSoundToAll(closingSound);
 			}
 			return;
 		}
@@ -131,7 +135,7 @@ public class MovingZoneTask implements Runnable {
 
 	private void announceNextZone() {
 		gameManager.broadcastInfoMessage(formatZoneMessage(Lang.DEATHMATCH_ZONE_NEXT, secondsLeft));
-		gameManager.getPlayerManager().playSoundToAll(UniversalSound.NOTE_PLING.getSound());
+		gameManager.getPlayerManager().playSoundToAll(announceSound);
 	}
 
 	private String formatZoneMessage(String message, int seconds) {

@@ -23,8 +23,8 @@ import com.gmail.val59000mc.game.GameManager;
 import com.gmail.val59000mc.game.GameState;
 import com.gmail.val59000mc.languages.Lang;
 import com.gmail.val59000mc.players.UhcPlayer;
+import com.gmail.val59000mc.utils.ConfigSound;
 import com.gmail.val59000mc.utils.LocationUtils;
-import com.gmail.val59000mc.utils.UniversalSound;
 import com.gmail.val59000mc.utils.VersionUtils;
 
 /**
@@ -44,7 +44,6 @@ public class BorderWarningTask implements Runnable {
 	private static final int FASTEST_BEEP_TICKS = 3;
 	private static final float LOWEST_PITCH = 0.7f;
 	private static final float HIGHEST_PITCH = 2.0f;
-	private static final int TITLE_STAY_TICKS = 25;
 
 	public enum Display {
 		ACTIONBAR, BOSSBAR, CHAT, TITLE
@@ -64,7 +63,8 @@ public class BorderWarningTask implements Runnable {
 	private final int warningDistance;
 	private final int dangerDistance;
 	private final Display display;
-	private final boolean sound;
+	private final ConfigSound sound;
+	private final int titleStayTicks;
 	private final BorderWarningBossBars bossBars;
 	private final Map<UUID, PlayerAlert> alerts = new HashMap<>();
 
@@ -79,6 +79,7 @@ public class BorderWarningTask implements Runnable {
 		this.warningDistance = Math.max(0, config.get(MainConfig.BORDER_WARNING_DISTANCE));
 		this.dangerDistance = Math.max(0, Math.min(warningDistance, config.get(MainConfig.BORDER_WARNING_DANGER_DISTANCE)));
 		this.sound = config.get(MainConfig.BORDER_WARNING_SOUND);
+		this.titleStayTicks = Math.max(1, config.get(MainConfig.BORDER_WARNING_TITLE_STAY));
 
 		Display configured = parseDisplay(config.get(MainConfig.BORDER_WARNING_DISPLAY));
 		// 1.8 has no boss bar API, and 1.8.8 is missing the action bar overload too.
@@ -86,7 +87,7 @@ public class BorderWarningTask implements Runnable {
 			configured = Display.TITLE;
 		}
 		this.display = configured;
-		this.bossBars = display == Display.BOSSBAR ? new BorderWarningBossBars() : null;
+		this.bossBars = display == Display.BOSSBAR ? new BorderWarningBossBars(config.get(MainConfig.BORDER_WARNING_BOSSBAR_WARNING_COLOR), config.get(MainConfig.BORDER_WARNING_BOSSBAR_DANGER_COLOR)) : null;
 	}
 
 	public void start() {
@@ -161,10 +162,11 @@ public class BorderWarningTask implements Runnable {
 			showMessage(player, level, distance, levelChanged);
 		}
 
-		if (sound && level == Level.DANGER && ticks >= alert.nextBeepTick) {
+		if (sound.isEnabled() && level == Level.DANGER && ticks >= alert.nextBeepTick) {
 			float closeness = getCloseness(distance);
-			float pitch = LOWEST_PITCH + (HIGHEST_PITCH - LOWEST_PITCH) * closeness;
-			player.playSound(player.getLocation(), UniversalSound.NOTE_PLING.getSound(), 1, pitch);
+			// The configured pitch scales this rising curve, so 1.0 keeps the original 0.7 to 2.0 sweep
+			float pitchFactor = LOWEST_PITCH + (HIGHEST_PITCH - LOWEST_PITCH) * closeness;
+			sound.play(player, pitchFactor);
 			alert.nextBeepTick = ticks + Math.round(SLOWEST_BEEP_TICKS - (SLOWEST_BEEP_TICKS - FASTEST_BEEP_TICKS) * closeness);
 		}
 		return true;
@@ -193,7 +195,7 @@ public class BorderWarningTask implements Runnable {
 				bossBars.show(player, message, progress, level == Level.DANGER);
 				break;
 			case TITLE:
-				if (!bridge.sendTitle(player, "", message, 0, TITLE_STAY_TICKS, 5) && levelChanged) {
+				if (!bridge.sendTitle(player, "", message, 0, titleStayTicks, 5) && levelChanged) {
 					player.sendMessage(message);
 				}
 				break;

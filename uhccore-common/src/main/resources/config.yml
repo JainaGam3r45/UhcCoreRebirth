@@ -234,15 +234,23 @@ customize-game-behavior:
   # When enabled a lightning strike will happen on the place of the player death
   stike-lightning-on-death: true
 
-  # Defines the sound played when a player dies.
-  # You can use "org.bukkit.Sound#SOUND_NAME" to specify a custom sound.
-  # Just replace SOUND_NAME with any of the values listed here:
-  # https://hub.spigotmc.org/stash/projects/SPIGOT/repos/bukkit/browse/src/main/java/org/bukkit/Sound.java
-  # NOTE that the org.bukkit.Sound names may change between Minecraft versions,
-  # so it is your responsibility to update this configuration accordingly.
-  # For older Minecraft versions, use the "History" drop-down menu on the page linked above.
-  # The special values "default" (currently the wither spawn sound) and "none" work across Minecraft versions.
-  player-death-sound: default
+  # Defines the sound played when a player dies. Every sound in this file has the same four settings:
+  #   enabled: false mutes it.
+  #   name: a sound name of your Minecraft version, like ENTITY_PLAYER_LEVELUP (1.9+) or LEVEL_UP (1.8).
+  #     'org.bukkit.Sound#NAME' and 'minecraft:entity.player.levelup' are fine too. Names change between versions,
+  #     but these are understood on every one of them: CLICK, NOTE_PLING, NOTE_BASS, LEVEL_UP, VILLAGER_NO,
+  #     WITHER_SPAWN, ENDERDRAGON_GROWL, FIREWORK_LAUNCH, BLOCK_GRASS_BREAK
+  #     All the sounds: https://hub.spigotmc.org/stash/projects/SPIGOT/repos/bukkit/browse/src/main/java/org/bukkit/Sound.java
+  #     (use the History drop-down for older Minecraft versions)
+  #     A name that doesn't exist on your server logs a warning once and the sound falls back to its default.
+  #   volume: 1.0 is normal, higher can be heard from further away.
+  #   pitch: from 0.5 (low) to 2.0 (high).
+  # An old 'player-death-sound: default' (or none, or org.bukkit.Sound#NAME) still works.
+  player-death-sound:
+    enabled: true
+    name: WITHER_SPAWN
+    volume: 1.0
+    pitch: 1.0
 
 # This section references optional features to allow to run in fast uhc mode ( = uhc run)
 fast-mode:
@@ -505,8 +513,19 @@ border-warning:
   # CHAT only posts when a player crosses into the warning or danger zone, so it doesn't flood the chat.
   # On 1.8, ACTIONBAR and BOSSBAR fall back to TITLE.
   display: ACTIONBAR
-  # Beep inside the danger distance. The beeps get faster and higher pitched the closer the player gets.
-  sound: true
+  # Beep inside the danger distance, same settings as player-death-sound in customize-game-behavior.
+  # The beeps get faster and higher pitched the closer the player gets, and 'pitch' scales that rising
+  # pitch (1.0 sweeps from 0.7 to 2.0). An old 'sound: true' or 'sound: false' still works.
+  sound:
+    enabled: true
+    name: NOTE_PLING
+    volume: 1.0
+    pitch: 1.0
+  # How long the TITLE display stays on screen, in ticks (20 ticks = 1 second)
+  title-stay: 25
+  # Boss bar colors for the BOSSBAR display: PINK, BLUE, RED, GREEN, YELLOW, PURPLE or WHITE
+  bossbar-warning-color: YELLOW
+  bossbar-danger-color: RED
 
 
 # Setting up the deathmatch
@@ -557,6 +576,18 @@ deathmatch:
       shrink-per-phase: 20
       # Max blocks the center moves per phase, on each axis. The new zone always fits inside the current one.
       max-center-shift: 30
+      # Sound when the next zone is announced, same settings as player-death-sound in customize-game-behavior
+      announce-sound:
+        enabled: true
+        name: NOTE_PLING
+        volume: 1.0
+        pitch: 1.0
+      # Sound when the border starts closing in
+      closing-sound:
+        enabled: true
+        name: ENDERDRAGON_GROWL
+        volume: 1.0
+        pitch: 1.0
     # Keep the meetup on the surface while the border shrinks. Players hiding underground
     # or caught outside the border get teleported to a safe surface spot inside it.
     surface:
