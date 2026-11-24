@@ -699,7 +699,10 @@ public class MapLoader {
 	}
 
 	private void prepareWorld(World world, Difficulty difficulty, boolean healthRegen, boolean locatorBar, boolean announceAdvancements, double borderSideLength) {
-		world.save();
+		// Paper 26.x warns every time a plugin saves by hand while autosave is on, and the autosave covers a new world anyway.
+		if (!world.isAutoSave()) {
+			world.save();
+		}
 		if (!healthRegen){
 			VersionUtils.getVersionUtils().setGameRuleValue(world, NATURAL_REGENERATION, false);
 		}
