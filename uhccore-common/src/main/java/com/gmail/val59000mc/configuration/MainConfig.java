@@ -284,12 +284,18 @@ public class MainConfig extends YamlFile {
 			changes = true;
 		}
 
-		if (changes || addedDefaultValues()) {
-			try {
+		try {
+			// Moving or removing legacy keys means rewriting the file. Everything else is pasted into the existing text
+			// (missing options, and the comment of options that have none) so the admin's comments and formatting survive.
+			// This runs on every start on purpose: a file with all its options but no comments still needs the second part,
+			// and nothing is written when there is nothing to add.
+			if (changes) {
 				saveWithComments();
-			} catch (IOException ex) {
-				LOGGER.log(Level.WARNING, "Unable to save config file", ex);
+			} else {
+				addMissingKeysFromTemplate();
 			}
+		} catch (IOException ex) {
+			LOGGER.log(Level.WARNING, "Unable to save config file", ex);
 		}
 	}
 

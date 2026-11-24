@@ -29,6 +29,7 @@ public class FileUtils{
 		File file = getResourceFile(plugin, fileName, sourceName);
 
 		YamlFile yamlFile = new YamlFile(file);
+		yamlFile.setTemplateResource(sourceName);
 		yamlFile.load();
 
 		return yamlFile;

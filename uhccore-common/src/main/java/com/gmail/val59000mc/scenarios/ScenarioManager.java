@@ -408,9 +408,7 @@ public class ScenarioManager {
 			field.set(listener, value);
 		}
 
-		if (cfg.addedDefaultValues()){
-			cfg.saveWithComments();
-		}
+		cfg.addMissingKeysFromTemplate();
 	}
 
 	private boolean isVotable(Scenario scenario) {

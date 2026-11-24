@@ -1,15 +1,12 @@
 package com.gmail.val59000mc.configuration;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import java.io.InputStream;
+import java.util.logging.Logger;
 
+import com.gmail.val59000mc.UhcCore;
 import com.gmail.val59000mc.configuration.options.BasicOption;
 import com.gmail.val59000mc.configuration.options.Option;
 import com.google.common.io.Files;
@@ -26,10 +23,14 @@ import org.bukkit.configuration.file.YamlConfiguration;
  */
 public class YamlFile extends YamlConfiguration {
 
+	private static final Logger LOGGER = Logger.getLogger(YamlFile.class.getCanonicalName());
+
 	/** File where data will be saved for this configuration */
 	private File configFile;
 	/** Used to save is a default value gets added. */
 	private boolean addedDefaultValues;
+	/** Name of the default copy of this file inside the jar, if it has one. */
+	private String templateResource;
 
 	/**
 	 * Builds this {@link FileConfiguration} without any configuration file.
@@ -88,127 +89,63 @@ public class YamlFile extends YamlConfiguration {
 	}
 
 	/**
-	 * Saves this {@link FileConfiguration} to the configuration file location with comments.
+	 * Saves this {@link FileConfiguration} to the configuration file location, keeping the comments.
 	 * <p>
-	 * <b>IMPORTANT: Use {@link #save()} if configuration file has not comments or don't need it
-	 * to improve time efficiency.</b>
+	 * The whole file is written again, so quotes, indentation and blank lines come out the way Bukkit dumps them.
+	 * The comments are put back by the path of the key they were above (and, for keys the file never had,
+	 * from the copy in the jar). When all that changed is that options were added, use
+	 * {@link #addMissingKeysFromTemplate()} instead, it leaves the file as the admin wrote it.
 	 * <p>
-	 * This method will copy the comments from the configuration file if exists to the saved new file.<br>
-	 * <b>Note</b> that comments next to a value will not be copied, to be copied the comment must have character
-	 * <code>'#'</code> as first character, ignoring indentations and blank spaces.
-	 * <p>
-	 * If the file does not exist, it will be created. If already exists, it
-	 * will be overwritten.
-	 * <p>
-	 * This method will save using the system default encoding, or possibly
-	 * using UTF8.
+	 * Comments written after a value on the same line can't be kept.
 	 * @throws IOException if it hasn't been possible to save configuration file
 	 * @see #save()
 	 */
 	public void saveWithComments() throws IOException {
 		Validate.notNull(configFile, "This configuration file is null!");
-		File old = File.createTempFile("tmp\\oldFileData", null);
-		if (configFile.exists())
-			copyTo(old);
-		save(configFile);
-		if (old != null) {
-			copyComments(old);
-			old.delete();
-		}
+		String old = configFile.exists() ? ConfigUpdater.readText(configFile) : null;
+		String text = ConfigUpdater.restoreComments(saveToString(), old, readTemplate());
+		ConfigUpdater.writeText(configFile, text);
 	}
 
 	/**
-	 * Insert all comments on <b>from</b> file to configuration file.
-	 * @param from source file
-	 * @throws IOException if I/O error occurs while copying comments
+	 * Adds the options the jar's copy has and this file lacks, with their comments and in the jar's order, and gives the
+	 * jar's comment to the options that have none. Nothing else in the file changes, and nothing is written when there is
+	 * nothing to add, so it is safe to call on every start. If the file can't be edited safely it is left alone and a
+	 * warning says why.
+	 * <p>
+	 * Files that have no copy in the jar get {@link #saveWithComments()}, but only if a default value was added.
+	 * @throws IOException if it hasn't been possible to write the configuration file
 	 */
-	private void copyComments(File from) throws IOException {
-		BufferedReader r_from = new BufferedReader(new FileReader(from));
-		BufferedReader r_new = new BufferedReader(new FileReader(configFile));
-
-		StringBuilder res = new StringBuilder();
-		String line_from = r_from.readLine();
-		String line_new = r_new.readLine();
-
-		// Map comments <PossibleKey, Comment>
-		Map<String, String> comments = new HashMap<>();
-
-		while (line_from != null) {
-			String trim = line_from.trim();
-			if (trim.isEmpty() || trim.startsWith("#")) { // Save comment
-				StringBuilder comment = new StringBuilder(line_from.length());
-				comment.append(line_from).append('\n');
-				line_from = r_from.readLine();
-				while (line_from != null && ((trim = line_from.trim()).isEmpty() || trim.startsWith("#"))) {
-					comment.append(line_from).append('\n');
-					line_from = r_from.readLine();
-				}
-				// Save Key (null for end of file) and its comment
-				comments.put(substring(line_from, ':'), comment.toString());
+	public void addMissingKeysFromTemplate() throws IOException {
+		Validate.notNull(configFile, "This configuration file is null!");
+		String template = readTemplate();
+		if (template == null) {
+			if (addedDefaultValues) {
+				saveWithComments();
 			}
-			else
-				line_from = r_from.readLine();
+			return;
 		}
-
-		// Restarts reader
-		r_from.close();
-		r_from = new BufferedReader(new FileReader(from));
-
-		// Copy new file and comments if key is found
-		int commentsWritten = 0, n = comments.size();
-		while (line_new != null) {
-			if (commentsWritten < n) {
-				String sub = substring(line_new, ':');
-				String comment = comments.get(sub);
-				if (comment != null) {
-					res.append(comment);
-					comments.remove(sub);
-					commentsWritten++;
-				}
-			}
-			if (!line_new.trim().startsWith("#"))
-				res.append(line_new).append('\n');
-			line_new = r_new.readLine();
-		}
-
-		// Copy end of file comment, if found
-		String comment = comments.get(null);
-		if (comment != null)
-			res.append(comment);
-
-		// Spigot 1.18+ already keeps comments and blank lines when saving, and the comment blocks above bring
-		// their own blank lines back too. Without this every save that added a key doubled the gaps.
-		String content = res.toString().replaceAll("\n{3,}", "\n\n").replaceFirst("^\n+", "");
-
-		BufferedWriter out = new BufferedWriter(new FileWriter(configFile, false));
-		out.write(content);
-		out.close();
-		r_from.close();
-		r_new.close();
+		ConfigUpdater.updateFile(configFile, template);
 	}
 
 	/**
-	 * Returns the substring of s that starts at position 0 and ends at the position
-	 * of character c (excluded).
-	 * @param s the String to search
-	 * @param c the end character of substring (excluded)
-	 * @return the substring of <b>s</b> that starts at position 0 and ends at the position
-	 * of character <b>c</b> (excluded). If <b>s</b> is <b>null</b>, returns <b>null</b>.
-	 * If <b>c</b> is not contained in <b>s</b>, returns <b>s</b>.
+	 * Sets the file inside the jar that acts as the default copy: the source of missing options and of their comments.
 	 */
-	private String substring(String s, char c) {
-		if (s != null) {
-			int n = s.length();
-			StringBuilder aux = new StringBuilder(n);
-			for (int i = 0; i < n; ++i) {
-				char charAt = s.charAt(i);
-				if (charAt != c)
-					aux.append(charAt);
-				else break;
-			}
-			return aux.toString();
+	public void setTemplateResource(String resourceName) {
+		templateResource = resourceName;
+	}
+
+	private String readTemplate() {
+		UhcCore plugin = UhcCore.getPlugin();
+		if (templateResource == null || plugin == null) {
+			return null;
 		}
-		return null;
+		try (InputStream stream = plugin.getResource(templateResource)) {
+			return stream == null ? null : ConfigUpdater.readText(stream);
+		} catch (IOException ex) {
+			LOGGER.warning("Couldn't read " + templateResource + " from the jar, no comments will be restored: " + ex.getMessage());
+			return null;
+		}
 	}
 
 	/**

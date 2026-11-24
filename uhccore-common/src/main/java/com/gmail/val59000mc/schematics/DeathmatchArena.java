@@ -116,7 +116,7 @@ public class DeathmatchArena extends Schematic {
 			storage.set("arena.type", spotMaterial.toString());
 			storage.set("arena.locations", vectorSpots);
 			try {
-				storage.save();
+				storage.saveWithComments();
 			}catch (IOException ex){
 				LOGGER.log(Level.WARNING, "Unable to save storage.yml", ex);
 			}

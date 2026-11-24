@@ -362,7 +362,7 @@ public class MapLoader {
 		storage.set("world-keys." + key, worldKeys.get(env));
 		storage.set("world-folders." + key, worldFolders.get(env));
 		try {
-			storage.save();
+			storage.saveWithComments();
 		}catch (IOException ex){
 			LOGGER.log(Level.WARNING, "Unable to save storage.yml", ex);
 		}

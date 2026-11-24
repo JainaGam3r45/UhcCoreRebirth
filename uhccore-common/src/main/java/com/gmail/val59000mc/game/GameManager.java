@@ -393,6 +393,7 @@ public class GameManager{
 		try{
 			File configFile = FileUtils.getResourceFile(UhcCore.getPlugin(), "config.yml");
 			config.setConfigurationFile(configFile);
+			config.setTemplateResource("config.yml");
 			config.load();
 		}catch (InvalidConfigurationException | IOException ex){
 			LOGGER.log(Level.WARNING, "Unable to load config.yml", ex);
