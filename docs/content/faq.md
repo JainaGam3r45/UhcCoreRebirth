@@ -123,8 +123,17 @@ You can add them in the kits.yml and crafts.yml configuration files. There are
 a few examples included in [the default configuration files][q4], to help you
 get started (those examples can also be removed if you prefer).
 
-When entering the value for an item in the kit or crafting recipe, you'll
-need to use a custom JSON format that UhcCore uses for items. This format is
+Kits are written as plain YAML: the symbol shown in the kit menu (`material`,
+`name`, `lore`, `slot`, `glow`, `custom-model-data`) and the list of `items`
+the player receives (`material`, `amount`, `name`, `lore`, `enchantments`...).
+Names and lore accept `&` colors and `&#RRGGBB` hex colors. The menu itself
+(title, rows, filler, close button and sounds) is configured in the `gui`
+section of the same file. The default kits.yml has examples for each of
+these. Kits written with the older JSON strings still load, and both
+styles can be mixed in one file.
+
+In crafting recipes, and in kits that still use JSON, the value for an item is
+a custom JSON format that UhcCore uses for items. This format is
 not documented and is generally not meant to be edited directly. Instead, you
 can use the `/iteminfo` command (provided by UhcCore) to get a correctly
 formatted JSON string to paste into your configuration file. The `/iteminfo`
